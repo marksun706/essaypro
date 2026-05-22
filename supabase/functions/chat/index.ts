@@ -61,7 +61,13 @@ serve(async (req) => {
       })
     })
 
-    const responseData = await response.json()
+    const responseText = await response.text()
+    let responseData: any;
+    try {
+      responseData = JSON.parse(responseText)
+    } catch (e) {
+      throw new Error(`DMXAPI returned invalid response (Status ${response.status}): ${responseText.slice(0, 200)}`)
+    }
 
     if (!response.ok) {
       throw new Error(responseData.error?.message || responseData.error || `DMXAPI server error: ${response.status}`)

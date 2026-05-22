@@ -72,7 +72,14 @@ function App() {
         body: JSON.stringify({ message: messageToSend, history: messages }),
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: any;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error(`Server returned invalid response (Status ${response.status}). The service may still be deploying or DMXAPI credentials might be incorrect.`);
+      }
+
       if (!response.ok) throw new Error(data.error || 'Server error');
       
       setMessages(prev => [...prev, { role: 'ai', content: data.reply }]);
