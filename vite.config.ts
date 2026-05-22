@@ -26,7 +26,10 @@ export default defineConfig(({ mode }) => {
 
               // 2. Fetch configured env variables
               const dmxApiKey = env.DMX_API_KEY;
-              const dmxApiUrl = env.DMX_API_URL || "https://api.dmxapi.cn";
+              let dmxApiUrl = env.DMX_API_URL || "https://api.dmxapi.cn";
+              if (dmxApiUrl && !dmxApiUrl.startsWith("http://") && !dmxApiUrl.startsWith("https://")) {
+                dmxApiUrl = `https://${dmxApiUrl}`;
+              }
               const dmxModel = env.DMX_MODEL || "claude-haiku-4-5-20251001-cc";
 
               if (!dmxApiKey) {
