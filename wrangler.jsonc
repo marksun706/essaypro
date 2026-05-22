@@ -11,5 +11,9 @@
   },
   "compatibility_flags": [
     "nodejs_compat"
-  ]
+  ],
+  "vars": {
+    "DMX_API_URL": "https://www.dmxapi.cn",
+    "DMX_MODEL": "claude-haiku-4-5-20251001-cc"
+  }
 }
