@@ -6,10 +6,25 @@ interface Message {
   content: string;
 }
 
+const loadScript = (src: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) {
+      resolve();
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load script ${src}`));
+    document.body.appendChild(script);
+  });
+};
+
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Navigation Modal States
@@ -31,17 +46,100 @@ function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const content = event.target?.result;
-        if (typeof content === 'string') {
-          setInput(prev => prev + `\n[File Content: ${file.name}]\n${content}\n`);
-        }
-      };
-      reader.readAsText(file);
+    if (!file) return;
+
+    setIsParsing(true);
+    setError(null);
+
+    try {
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+
+      if (fileExtension === 'txt') {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const content = event.target?.result;
+          if (typeof content === 'string') {
+            setInput(prev => prev + `\n[File Content: ${file.name}]\n${content}\n`);
+            setIsParsing(false);
+          }
+        };
+        reader.onerror = () => {
+          setError("Failed to read the text file.");
+          setIsParsing(false);
+        };
+        reader.readAsText(file);
+      } 
+      else if (fileExtension === 'docx') {
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js');
+        
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const arrayBuffer = event.target?.result;
+          if (arrayBuffer instanceof ArrayBuffer) {
+            try {
+              // @ts-ignore
+              const result = await window.mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+              setInput(prev => prev + `\n[Document Content: ${file.name}]\n${result.value}\n`);
+            } catch (err: any) {
+              setError(`Failed to parse Word document: ${err.message}`);
+            }
+          }
+          setIsParsing(false);
+        };
+        reader.onerror = () => {
+          setError("Failed to read the Word file.");
+          setIsParsing(false);
+        };
+        reader.readAsArrayBuffer(file);
+      } 
+      else if (fileExtension === 'pdf') {
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+        
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const arrayBuffer = event.target?.result;
+          if (arrayBuffer instanceof ArrayBuffer) {
+            try {
+              // @ts-ignore
+              const pdfjsLib = window['pdfjs-dist/build/pdf'];
+              pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+              
+              const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+              const pdf = await loadingTask.promise;
+              let fullText = '';
+              
+              for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                // @ts-ignore
+                const pageText = textContent.items.map((item: any) => item.str).join(' ');
+                fullText += pageText + '\n';
+              }
+              
+              setInput(prev => prev + `\n[PDF Content: ${file.name}]\n${fullText}\n`);
+            } catch (err: any) {
+              setError(`Failed to parse PDF document: ${err.message}`);
+            }
+          }
+          setIsParsing(false);
+        };
+        reader.onerror = () => {
+          setError("Failed to read the PDF file.");
+          setIsParsing(false);
+        };
+        reader.readAsArrayBuffer(file);
+      } 
+      else {
+        setError("Unsupported file format. Please upload a .txt, .pdf, or .docx file.");
+        setIsParsing(false);
+      }
+    } catch (err: any) {
+      setError(`Failed to load document parsing library: ${err.message}`);
+      setIsParsing(false);
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -170,31 +268,40 @@ function App() {
               <div className="flex items-end gap-2 relative">
                 <button 
                   onClick={() => fileInputRef.current?.click()}
-                  className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-2xl transition-all"
+                  disabled={isParsing}
+                  className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-2xl transition-all disabled:opacity-30 disabled:pointer-events-none"
                   title="Upload Requirements"
                 >
                   <Paperclip size={20} />
                 </button>
-                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".txt" />
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".txt,.pdf,.docx" />
 
                 <textarea 
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyPress}
-                  className="flex-1 border-0 focus:outline-none focus:ring-0 resize-none bg-transparent py-2.5 px-2 text-sm text-slate-800 placeholder-slate-400 min-h-[44px]"
-                  placeholder="Paste essay requirements or type your story details..."
+                  disabled={isParsing}
+                  className="flex-1 border-0 focus:outline-none focus:ring-0 resize-none bg-transparent py-2.5 px-2 text-sm text-slate-800 placeholder-slate-400 min-h-[44px] disabled:opacity-50"
+                  placeholder={isParsing ? "Extracting text from document..." : "Paste essay requirements or type your story details..."}
                   rows={1}
                 />
                 
                 <button 
                   onClick={() => handleSend()}
-                  disabled={isLoading || !input.trim()}
+                  disabled={isLoading || isParsing || !input.trim()}
                   className="p-3.5 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-30 disabled:scale-100 disabled:pointer-events-none"
                 >
                   <Send size={18} />
                 </button>
               </div>
             </div>
+
+            {isParsing && (
+              <div className="w-full max-w-2xl mt-3 flex items-center justify-center gap-2 text-slate-500 text-xs font-bold animate-pulse animate-fade-in">
+                <Loader2 size={16} className="animate-spin text-indigo-600" />
+                <span>Reading and extracting document content...</span>
+              </div>
+            )}
 
             {/* Quick Suggestions Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-2xl mt-8">
@@ -242,6 +349,12 @@ function App() {
                   <Loader2 size={16} className="animate-spin text-indigo-600" /> Analyzing vocabulary standard...
                 </div>
               )}
+
+              {isParsing && (
+                <div className="flex items-center gap-2.5 text-slate-400 text-xs font-semibold animate-pulse py-2">
+                  <Loader2 size={16} className="animate-spin text-indigo-600" /> Extracting document text...
+                </div>
+              )}
               
               {error && (
                 <div className="flex items-center gap-2.5 text-red-600 bg-red-50 p-4 rounded-2xl border border-red-100 text-sm shadow-sm">
@@ -258,26 +371,28 @@ function App() {
               <div className="max-w-3xl mx-auto flex items-end gap-2 relative">
                 <button 
                   onClick={() => fileInputRef.current?.click()}
-                  className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-2xl transition-all"
+                  disabled={isParsing}
+                  className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-2xl transition-all disabled:opacity-30 disabled:pointer-events-none"
                   title="Upload Requirements"
                 >
                   <Paperclip size={20} />
                 </button>
-                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".txt" />
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".txt,.pdf,.docx" />
                 
                 <textarea 
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyPress}
-                  className="flex-1 border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 rounded-2xl p-4 bg-slate-50 resize-none transition-all text-sm min-h-[52px]"
-                  placeholder="Ask a follow-up, paste a prompt or rewrite requirements..."
+                  disabled={isParsing}
+                  className="flex-1 border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 rounded-2xl p-4 bg-slate-50 resize-none transition-all text-sm min-h-[52px] disabled:opacity-50"
+                  placeholder={isParsing ? "Extracting text from document..." : "Ask a follow-up, paste a prompt or rewrite requirements..."}
                   rows={1}
                 />
                 
                 <button 
                   onClick={() => handleSend()}
-                  disabled={isLoading || !input.trim()}
-                  className="p-4 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:scale-100"
+                  disabled={isLoading || isParsing || !input.trim()}
+                  className="p-4 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:pointer-events-none"
                 >
                   <Send size={18} />
                 </button>

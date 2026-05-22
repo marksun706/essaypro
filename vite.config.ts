@@ -127,6 +127,6 @@ export default defineConfig(({ mode }) => {
           }
         });
       }
-    }, cloudflare()],
+    }],
   };
 });

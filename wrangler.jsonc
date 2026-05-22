@@ -1,16 +1,28 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "essaypro",
+  "name": "essayspro",
   "main": "src/worker.ts",
   "compatibility_date": "2026-05-22",
   "observability": {
     "enabled": true
   },
   "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
   "compatibility_flags": [
     "nodejs_compat"
+  ],
+  "routes": [
+    {
+      "pattern": "essayspro.org/*",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.essayspro.org/*",
+      "custom_domain": true
+    }
   ],
   "vars": {
     "DMX_API_URL": "https://www.dmxapi.cn",
