@@ -26,7 +26,7 @@ function App() {
   }, [messages]);
 
   const copyEmail = () => {
-    navigator.clipboard.writeText('hsun3@alumni.upenn.edu');
+    navigator.clipboard.writeText('support@essayspro.org');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -107,7 +107,7 @@ function App() {
             <GraduationCap size={22} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">essaypro</h1>
+            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">essayspro</h1>
             <span className="text-[9px] text-indigo-600 uppercase font-black tracking-widest block mt-0.5">Ivy League Standard</span>
           </div>
         </div>
@@ -151,7 +151,7 @@ function App() {
                 <GraduationCap size={36} />
               </div>
               <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-2">
-                essay<span className="text-indigo-600">pro</span>
+                essays<span className="text-indigo-600">pro</span>
               </h2>
               <p className="text-sm md:text-base text-slate-400 font-medium tracking-wide max-w-md">
                 Ivy League standard generative outlining and vocabulary sculpting assistant.
@@ -292,7 +292,7 @@ function App() {
                   <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
                     <Info size={16} />
                   </div>
-                  <h3 className="font-extrabold text-slate-900 tracking-tight">About essaypro</h3>
+                  <h3 className="font-extrabold text-slate-900 tracking-tight">About essayspro</h3>
                 </div>
                 <button 
                   onClick={() => setActiveModal(null)} 
@@ -303,7 +303,7 @@ function App() {
               </div>
               <div className="p-6 space-y-4">
                 <p className="text-sm text-slate-600 leading-relaxed">
-                  <strong>essaypro</strong> is an elite academic editing platform that marries state-of-the-art generative technology with seasoned human admissions experts. 
+                  <strong>essayspro</strong> is an elite academic editing platform that marries state-of-the-art generative technology with seasoned human admissions experts. 
                 </p>
                 <div className="p-4 bg-indigo-50/50 border border-indigo-100/40 rounded-2xl">
                   <h4 className="text-xs font-black text-indigo-700 uppercase tracking-wider mb-1">Our Core Purpose</h4>
@@ -401,8 +401,8 @@ function App() {
                 {/* Copy Card */}
                 <div className="bg-slate-900/5 hover:bg-slate-900/10 border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center relative gap-3 transition-colors">
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">Official Contact Desk</span>
-                  <a href="mailto:hsun3@alumni.upenn.edu" className="text-base font-extrabold text-slate-900 hover:text-indigo-600 transition-all underline decoration-dotted">
-                    hsun3@alumni.upenn.edu
+                  <a href="mailto:support@essayspro.org" className="text-base font-extrabold text-slate-900 hover:text-indigo-600 transition-all underline decoration-dotted">
+                    support@essayspro.org
                   </a>
                   
                   <button 
