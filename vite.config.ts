@@ -5,6 +5,27 @@ import path from 'path';
 
 import { cloudflare } from "@cloudflare/vite-plugin";
 
+function formatDmxUrl(configuredUrl: string): string {
+  let url = configuredUrl.trim();
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    url = `https://${url}`;
+  }
+  try {
+    const parsed = new URL(url);
+    const cleanPath = parsed.pathname.replace(/\/$/, "");
+    if (cleanPath.endsWith("/v1/chat/completions")) {
+      return parsed.origin + cleanPath;
+    }
+    return `${parsed.origin}${cleanPath}/v1/chat/completions`;
+  } catch (e) {
+    const cleanUrl = url.replace(/\/$/, "");
+    if (cleanUrl.endsWith("/v1/chat/completions")) {
+      return cleanUrl;
+    }
+    return `${cleanUrl}/v1/chat/completions`;
+  }
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Load local environment variables from .env
@@ -26,10 +47,7 @@ export default defineConfig(({ mode }) => {
 
               // 2. Fetch configured env variables
               const dmxApiKey = env.DMX_API_KEY;
-              let dmxApiUrl = env.DMX_API_URL || "https://api.dmxapi.cn";
-              if (dmxApiUrl && !dmxApiUrl.startsWith("http://") && !dmxApiUrl.startsWith("https://")) {
-                dmxApiUrl = `https://${dmxApiUrl}`;
-              }
+              const dmxApiUrl = env.DMX_API_URL || "https://api.dmxapi.cn";
               const dmxModel = env.DMX_MODEL || "claude-haiku-4-5-20251001-cc";
 
               if (!dmxApiKey) {
@@ -59,7 +77,8 @@ export default defineConfig(({ mode }) => {
               ];
 
               // 5. Query the DMXAPI endpoint
-              const response = await fetch(`${dmxApiUrl}/v1/chat/completions`, {
+              const finalDmxUrl = formatDmxUrl(dmxApiUrl);
+              const response = await fetch(finalDmxUrl, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",

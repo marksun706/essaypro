@@ -5,6 +5,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+function formatDmxUrl(configuredUrl: string): string {
+  let url = configuredUrl.trim();
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    url = `https://${url}`;
+  }
+  try {
+    const parsed = new URL(url);
+    const cleanPath = parsed.pathname.replace(/\/$/, "");
+    if (cleanPath.endsWith("/v1/chat/completions")) {
+      return parsed.origin + cleanPath;
+    }
+    return `${parsed.origin}${cleanPath}/v1/chat/completions`;
+  } catch (e) {
+    const cleanUrl = url.replace(/\/$/, "");
+    if (cleanUrl.endsWith("/v1/chat/completions")) {
+      return cleanUrl;
+    }
+    return `${cleanUrl}/v1/chat/completions`;
+  }
+}
+
 serve(async (req) => {
   // Handle CORS Preflight OPTIONS requests for cross-origin security
   if (req.method === 'OPTIONS') {
@@ -17,10 +38,7 @@ serve(async (req) => {
 
     // 2. Read environmental variables
     const dmxApiKey = Deno.env.get("DMX_API_KEY")
-    let dmxApiUrl = Deno.env.get("DMX_API_URL") || "https://www.dmxapi.com"
-    if (dmxApiUrl && !dmxApiUrl.startsWith("http://") && !dmxApiUrl.startsWith("https://")) {
-      dmxApiUrl = `https://${dmxApiUrl}`;
-    }
+    const dmxApiUrl = Deno.env.get("DMX_API_URL") || "https://www.dmxapi.com"
     const dmxModel = Deno.env.get("DMX_MODEL") || "claude-haiku-4-5-20251001-cc"
 
     if (!dmxApiKey) {
@@ -51,7 +69,8 @@ serve(async (req) => {
     ]
 
     // 5. Query DMXAPI Gateway
-    const response = await fetch(`${dmxApiUrl}/v1/chat/completions`, {
+    const finalDmxUrl = formatDmxUrl(dmxApiUrl);
+    const response = await fetch(finalDmxUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
