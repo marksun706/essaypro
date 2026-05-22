@@ -44,6 +44,20 @@ export default {
       return new Response("ok", { headers: corsHeaders });
     }
 
+    // Handle Debug Env Endpoint (Safe diagnostic check)
+    if (url.pathname === "/functions/v1/debug-env" && request.method === "GET") {
+      return new Response(
+        JSON.stringify({
+          DMX_API_KEY_configured: !!env.DMX_API_KEY,
+          DMX_API_KEY_length: env.DMX_API_KEY ? env.DMX_API_KEY.length : 0,
+          DMX_API_URL: env.DMX_API_URL || "not configured (defaults to https://www.dmxapi.cn)",
+          DMX_MODEL: env.DMX_MODEL || "not configured (defaults to claude-haiku-4-5-20251001-cc)",
+          has_assets: !!env.ASSETS,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Handle Chat Endpoint
     if (url.pathname === "/functions/v1/chat" && request.method === "POST") {
       try {
