@@ -3,8 +3,6 @@ import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
 
-import { cloudflare } from "@cloudflare/vite-plugin";
-
 function formatDmxUrl(configuredUrl: string): string {
   let url = configuredUrl.trim();
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
