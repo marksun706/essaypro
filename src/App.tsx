@@ -26,7 +26,7 @@ function App() {
   }, [messages]);
 
   const copyEmail = () => {
-    navigator.clipboard.writeText('support@essayspro.org');
+    navigator.clipboard.writeText('admissions@essayspro.org');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -401,8 +401,8 @@ function App() {
                 {/* Copy Card */}
                 <div className="bg-slate-900/5 hover:bg-slate-900/10 border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center relative gap-3 transition-colors">
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">Official Contact Desk</span>
-                  <a href="mailto:support@essayspro.org" className="text-base font-extrabold text-slate-900 hover:text-indigo-600 transition-all underline decoration-dotted">
-                    support@essayspro.org
+                  <a href="mailto:admissions@essayspro.org" className="text-base font-extrabold text-slate-900 hover:text-indigo-600 transition-all underline decoration-dotted">
+                    admissions@essayspro.org
                   </a>
                   
                   <button 
