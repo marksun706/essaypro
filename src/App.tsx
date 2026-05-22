@@ -80,7 +80,7 @@ function App() {
           if (arrayBuffer instanceof ArrayBuffer) {
             try {
               // @ts-ignore
-              const result = await window.mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+              const result = await (window as any).mammoth.extractRawText({ arrayBuffer: arrayBuffer });
               setInput(prev => prev + `\n[Document Content: ${file.name}]\n${result.value}\n`);
             } catch (err: any) {
               setError(`Failed to parse Word document: ${err.message}`);
