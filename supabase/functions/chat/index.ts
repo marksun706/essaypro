@@ -17,7 +17,7 @@ serve(async (req) => {
 
     // 2. Read environmental variables
     const dmxApiKey = Deno.env.get("DMX_API_KEY")
-    const dmxApiUrl = Deno.env.get("DMX_API_URL") || "https://api.dmxapi.com"
+    const dmxApiUrl = Deno.env.get("DMX_API_URL") || "https://www.dmxapi.com"
     const dmxModel = Deno.env.get("DMX_MODEL") || "claude-haiku-4-5-20251001-cc"
 
     if (!dmxApiKey) {

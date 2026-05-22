@@ -56,11 +56,18 @@ function App() {
     setError(null);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`, {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const isPlaceholder = !supabaseUrl || 
+                            supabaseUrl.includes('your-project') || 
+                            supabaseUrl.includes('placeholder') || 
+                            supabaseUrl.trim() === '';
+      const fetchUrl = isPlaceholder ? '/functions/v1/chat' : `${supabaseUrl}/functions/v1/chat`;
+
+      const response = await fetch(fetchUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'local'}`
         },
         body: JSON.stringify({ message: messageToSend, history: messages }),
       });
