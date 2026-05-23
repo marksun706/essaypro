@@ -411,7 +411,7 @@ function App() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
                 disabled={isParsing}
-                className="w-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 rounded-2xl p-4 bg-slate-50/50 resize-none transition-all text-xs min-h-[140px] max-h-[220px] leading-relaxed disabled:opacity-50"
+                className="w-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 rounded-2xl p-4 bg-slate-50/50 resize-none transition-all text-xs min-h-[110px] max-h-[220px] leading-relaxed disabled:opacity-50"
                 placeholder={isParsing ? "Extracting document..." : "Paste essay questions, prompts, word limits, or specific requirements here..."}
               />
               
@@ -443,7 +443,7 @@ function App() {
           </div>
 
           {/* Bottom Section: Admissions Context Card (Collapsible scrollable profile details) */}
-          <div className="border-t border-slate-100 p-4 bg-slate-50 shrink-0 overflow-y-auto max-h-[38%] custom-scrollbar">
+          <div className="border-t border-slate-100 p-4 bg-slate-50 shrink-0 overflow-y-auto max-h-[48%] custom-scrollbar">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-1.5">
                 <BookOpen size={14} className="text-indigo-600" />
@@ -491,7 +491,7 @@ function App() {
               <textarea
                 value={storyInput}
                 onChange={(e) => setStoryInput(e.target.value)}
-                rows={2}
+                rows={5}
                 placeholder="Write down your life and academic experiences, whatever you think is worth writing (achievements or failures, anything that matters to you, special or unique). It is better if they are coupled with your own understanding or enlightenment—not necessarily shining or big, but unique. No grammar or quality requirements."
                 className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl p-2.5 text-slate-800 placeholder-slate-350 leading-relaxed font-medium transition-all resize-none"
               />
