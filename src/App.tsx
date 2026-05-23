@@ -11,14 +11,12 @@ import {
   Copy, 
   Check, 
   GraduationCap, 
-  ChevronRight, 
   MessageSquare, 
   Download, 
   Sparkles, 
   FileText, 
   BookOpen,
-  CheckCircle,
-  HelpCircle
+  CheckCircle
 } from 'lucide-react';
 
 interface Message {
@@ -147,7 +145,7 @@ function App() {
           const arrayBuffer = event.target?.result;
           if (arrayBuffer instanceof ArrayBuffer) {
             try {
-              const pdfjsLib = window['pdfjs-dist/build/pdf'];
+              const pdfjsLib = (window as any)['pdfjs-dist/build/pdf'];
               pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
               
               const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
