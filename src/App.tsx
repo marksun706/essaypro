@@ -282,13 +282,6 @@ function App() {
     }
   };
 
-  // Onboarding Suggetions
-  const suggestions = [
-    { title: "Draft a Personal Statement", text: "Highlight my passion for computer science and community volunteering." },
-    { title: "Refine Ivy Supplement", text: "Structure a supplement response explaining 'Why Penn' for my application." },
-    { title: "Review Tone & Flow", text: "Check my essay introduction for flow, maturity, and academic rigor." }
-  ];
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800 antialiased selection:bg-indigo-500/10 h-screen overflow-hidden">
       
@@ -366,98 +359,17 @@ function App() {
           activeTab === 'editor' ? 'flex' : 'hidden md:flex'
         }`}>
           
-          {/* Admissions Context Card (Collapsible scrollable profile details) */}
-          <div className="border-b border-slate-100 p-4 bg-slate-50/50 shrink-0 overflow-y-auto max-h-[45%] md:max-h-[38%] custom-scrollbar">
-            <div className="flex items-center gap-2 mb-3">
-              <BookOpen size={16} className="text-indigo-600" />
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Admissions Profile Ingredients</h3>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 mb-2.5">
-              {/* Target Program Box */}
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Target Program/Major</label>
-                <input 
-                  type="text" 
-                  value={targetProgram}
-                  onChange={(e) => setTargetProgram(e.target.value)}
-                  placeholder="e.g. Wharton MBA, CS PhD"
-                  className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-300 font-medium transition-all"
-                />
-              </div>
-
-              {/* Word Limit Box */}
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Word Limit Goal</label>
-                <input 
-                  type="text" 
-                  value={wordLimit}
-                  onChange={(e) => setWordLimit(e.target.value)}
-                  placeholder="e.g. 500 words, 650 max"
-                  className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-300 font-medium transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Background Story Textarea Input */}
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Story, Failures & Accomplishments</label>
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-[9px] font-black text-indigo-600 hover:text-indigo-700 hover:underline flex items-center gap-0.5"
-                  title="Upload resume or documents"
-                >
-                  <Paperclip size={10} /> Upload Doc instead
-                </button>
-                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".txt,.pdf,.docx" />
-              </div>
-              
-              <textarea
-                value={storyInput}
-                onChange={(e) => setStoryInput(e.target.value)}
-                rows={3}
-                placeholder="Write down your life and academic experiences, whatever you think is worth writing (achievements or failures, anything that matters to you, special or unique). It is better if they are coupled with your own understanding or enlightenment—not necessarily shining or big, but unique. No grammar or quality requirements."
-                className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl p-3 text-slate-800 placeholder-slate-350 leading-relaxed font-medium transition-all resize-none"
-              />
-            </div>
-            
-            {isParsing && (
-              <div className="flex items-center gap-1.5 text-slate-500 text-[10px] font-bold mt-2 animate-pulse">
-                <Loader2 size={12} className="animate-spin text-indigo-600" />
-                <span>Reading and extracting document content...</span>
-              </div>
-            )}
-          </div>
-
-          {/* Conversations Thread (Fills remainder) */}
+          {/* Top Section: Conversations Thread (Scrollable) */}
           <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 h-full bg-slate-50/20 custom-scrollbar">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3 opacity-80">
-                <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm">
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3 opacity-80 my-auto">
+                <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm animate-scale-in">
                   <GraduationCap size={24} />
                 </div>
                 <h4 className="text-sm font-bold text-slate-800">Your Co-Pilot Admissions Chat</h4>
                 <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
-                  Fill in your admissions profile parameters above, ask queries below, or click suggestions to coordinate your narrative outline.
+                  Welcome! Paste your essay prompts, prompts, word limits, or specific requirements in the Chatbox below to begin editing, brainstorming, or writing your essay.
                 </p>
-                
-                {/* Suggestions triggers */}
-                <div className="w-full space-y-2 pt-3">
-                  {suggestions.map((s, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleSend(s.text)}
-                      className="w-full text-left p-3 bg-white border border-slate-200/60 hover:border-indigo-100 hover:bg-indigo-50/15 rounded-xl shadow-xs transition-all text-xs flex items-start gap-2 group"
-                    >
-                      <Sparkles size={12} className="text-indigo-500 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold text-slate-800 block group-hover:text-indigo-600 leading-tight">{s.title}</span>
-                        <span className="text-[10px] text-slate-400 block mt-0.5 line-clamp-1">{s.text}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -490,22 +402,21 @@ function App() {
             )}
           </div>
 
-          {/* Sticky Bottom Inputs Area */}
-          <div className="p-3 bg-white border-t border-slate-100 shrink-0">
+          {/* Middle Section: Large Chatbox & Dual Action Buttons */}
+          <div className="p-4 bg-white border-t border-slate-100 shrink-0">
             <div className="flex flex-col gap-2 w-full">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Active Chatbox</label>
               <textarea 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
                 disabled={isParsing}
-                className="w-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 bg-slate-50/50 resize-none transition-all text-xs min-h-[44px] max-h-[80px] leading-relaxed disabled:opacity-50"
-                placeholder={isParsing ? "Extracting document..." : "Ask follow-ups, paste essay segments, or critique tone..."}
-                rows={1}
+                className="w-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 rounded-2xl p-4 bg-slate-50/50 resize-none transition-all text-xs min-h-[140px] max-h-[220px] leading-relaxed disabled:opacity-50"
+                placeholder={isParsing ? "Extracting document..." : "Paste essay questions, prompts, word limits, or specific requirements here..."}
               />
               
               {/* Premium Dual Buttons row */}
-              <div className="flex items-center gap-2 w-full">
-                
+              <div className="flex items-center gap-2 w-full mt-1">
                 {/* Standard Chat Button */}
                 <button 
                   onClick={() => handleSend(undefined, false)}
@@ -527,9 +438,71 @@ function App() {
                   <Sparkles size={12} />
                   <span>Generate Essay</span>
                 </button>
-
               </div>
             </div>
+          </div>
+
+          {/* Bottom Section: Admissions Context Card (Collapsible scrollable profile details) */}
+          <div className="border-t border-slate-100 p-4 bg-slate-50 shrink-0 overflow-y-auto max-h-[38%] custom-scrollbar">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-1.5">
+                <BookOpen size={14} className="text-indigo-600" />
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Admissions Profile Ingredients</h3>
+              </div>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="text-[9px] font-black text-indigo-600 hover:text-indigo-700 hover:underline flex items-center gap-0.5"
+                title="Upload resume or documents"
+              >
+                <Paperclip size={10} /> Upload Doc
+              </button>
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".txt,.pdf,.docx" />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 mb-2.5">
+              {/* Target Program Box */}
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Target Program/Major</label>
+                <input 
+                  type="text" 
+                  value={targetProgram}
+                  onChange={(e) => setTargetProgram(e.target.value)}
+                  placeholder="e.g. Wharton MBA, CS PhD"
+                  className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-300 font-medium transition-all"
+                />
+              </div>
+
+              {/* Word Limit Box */}
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Word Limit Goal</label>
+                <input 
+                  type="text" 
+                  value={wordLimit}
+                  onChange={(e) => setWordLimit(e.target.value)}
+                  placeholder="e.g. 500 words, 650 max"
+                  className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-300 font-medium transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Background Story Textarea Input */}
+            <div>
+              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Story, Failures & Accomplishments (Optional)</label>
+              <textarea
+                value={storyInput}
+                onChange={(e) => setStoryInput(e.target.value)}
+                rows={2}
+                placeholder="Write down your life and academic experiences, whatever you think is worth writing (achievements or failures, anything that matters to you, special or unique). It is better if they are coupled with your own understanding or enlightenment—not necessarily shining or big, but unique. No grammar or quality requirements."
+                className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl p-2.5 text-slate-800 placeholder-slate-350 leading-relaxed font-medium transition-all resize-none"
+              />
+            </div>
+            
+            {isParsing && (
+              <div className="flex items-center gap-1.5 text-slate-500 text-[10px] font-bold mt-2 animate-pulse">
+                <Loader2 size={12} className="animate-spin text-indigo-600" />
+                <span>Reading and extracting document content...</span>
+              </div>
+            )}
           </div>
 
         </section>
@@ -601,7 +574,7 @@ function App() {
                 <div className="space-y-1">
                   <h3 className="text-base font-black text-slate-800">Your Living Document Workspace</h3>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    Once you configure your admissions story and program details on the left pane and click **"Generate Essay"**, the Ivy League admissions consultant draft will appear here in real time.
+                    Once you configure your admissions story and program details on the left pane and click **"Generate Essay"**, the admissions consultant draft will appear here in real time.
                   </p>
                 </div>
                 
@@ -703,7 +676,7 @@ function App() {
                   <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center text-white font-bold">
                     <ShieldAlert size={16} />
                   </div>
-                  <h3 className="font-extrabold text-slate-900 tracking-tight">AI & Admissions Notice</h3>
+                  <h3 className="font-extrabold text-slate-900 tracking-tight">Admissions Notice</h3>
                 </div>
                 <button 
                   onClick={() => setActiveModal(null)} 
@@ -716,7 +689,7 @@ function App() {
                 <div className="p-4 bg-amber-50/50 border border-amber-200/40 rounded-2xl flex gap-3 items-start">
                   <ShieldAlert className="text-amber-600 shrink-0 mt-0.5" size={20} />
                   <div>
-                    <h4 className="text-xs font-bold text-amber-900 mb-1">Frightening but Important Reality</h4>
+                    <h4 className="text-xs font-bold text-amber-900 mb-1">Core Admissions Notice</h4>
                     <p className="text-xs text-amber-800 leading-relaxed font-medium">
                       AI-generated personal statements and supplements are increasingly flagged by university admissions software. Admissions departments search for robotic tone patterns.
                     </p>
@@ -778,8 +751,8 @@ function App() {
                     onClick={copyEmail}
                     className={`mt-1 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                       copied 
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                        : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm active:scale-95'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                        : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm active:scale-95'
                     }`}
                   >
                     {copied ? <Check size={14} /> : <Copy size={14} />}
