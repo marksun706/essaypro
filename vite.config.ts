@@ -41,12 +41,14 @@ export default defineConfig(({ mode }) => {
               for await (const chunk of req) {
                 body += chunk;
               }
-              const { message, history } = JSON.parse(body);
+              const { message, history, isChatOnly } = JSON.parse(body);
 
               // 2. Fetch configured env variables
               const dmxApiKey = env.DMX_API_KEY;
               const dmxApiUrl = env.DMX_API_URL || "https://api.dmxapi.cn";
-              const dmxModel = env.DMX_MODEL || "claude-haiku-4-5-20251001-cc";
+              const dmxModel = isChatOnly 
+                ? (env.DMX_CHAT_MODEL || "gpt-4o-mini") 
+                : (env.DMX_MODEL || "claude-haiku-4-5-20251001-cc");
 
               if (!dmxApiKey) {
                 res.statusCode = 400;

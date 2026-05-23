@@ -2,6 +2,7 @@ interface Env {
   DMX_API_KEY: string;
   DMX_API_URL?: string;
   DMX_MODEL?: string;
+  DMX_CHAT_MODEL?: string;
   ASSETS: {
     fetch: typeof fetch;
   };
@@ -52,6 +53,7 @@ export default {
           DMX_API_KEY_length: env.DMX_API_KEY ? env.DMX_API_KEY.length : 0,
           DMX_API_URL: env.DMX_API_URL || "not configured (defaults to https://www.dmxapi.cn)",
           DMX_MODEL: env.DMX_MODEL || "not configured (defaults to claude-haiku-4-5-20251001-cc)",
+          DMX_CHAT_MODEL: env.DMX_CHAT_MODEL || "not configured (defaults to gpt-4o-mini)",
           has_assets: !!env.ASSETS,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -63,7 +65,7 @@ export default {
       try {
         // 1. Get request body safely
         const requestText = await request.text();
-        let requestData: { message: string, history: any[] };
+        let requestData: { message: string, history: any[], isChatOnly?: boolean };
         try {
           requestData = JSON.parse(requestText);
         } catch (e) {
@@ -73,12 +75,14 @@ export default {
           );
         }
 
-        const { message, history } = requestData;
+        const { message, history, isChatOnly } = requestData;
 
         // 2. Read environment variables
         const dmxApiKey = env.DMX_API_KEY;
         const dmxApiUrl = env.DMX_API_URL || "https://www.dmxapi.cn";
-        const dmxModel = env.DMX_MODEL || "claude-haiku-4-5-20251001-cc";
+        const dmxModel = isChatOnly 
+          ? (env.DMX_CHAT_MODEL || "gpt-4o-mini") 
+          : (env.DMX_MODEL || "claude-haiku-4-5-20251001-cc");
 
         if (!dmxApiKey) {
           return new Response(

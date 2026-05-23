@@ -1,5 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, AlertCircle, Loader2, Paperclip, Mail, ShieldAlert, Info, X, Copy, Check, GraduationCap, ChevronRight, MessageSquare } from 'lucide-react';
+import { 
+  Send, 
+  AlertCircle, 
+  Loader2, 
+  Paperclip, 
+  Mail, 
+  ShieldAlert, 
+  Info, 
+  X, 
+  Copy, 
+  Check, 
+  GraduationCap, 
+  ChevronRight, 
+  MessageSquare, 
+  Download, 
+  Sparkles, 
+  FileText, 
+  BookOpen,
+  CheckCircle,
+  HelpCircle
+} from 'lucide-react';
 
 interface Message {
   role: 'ai' | 'user';
@@ -26,8 +46,16 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Split-Screen Redesign States
+  const [storyInput, setStoryInput] = useState<string>('');
+  const [wordLimit, setWordLimit] = useState<string>('');
+  const [targetProgram, setTargetProgram] = useState<string>('');
+  const [generatedEssay, setGeneratedEssay] = useState<string>('');
   
-  // Navigation Modal States
+  // UI states
+  const [copiedEssay, setCopiedEssay] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
   const [activeModal, setActiveModal] = useState<'about' | 'contact' | 'disclaimer' | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -46,6 +74,24 @@ function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const copyEssayToClipboard = () => {
+    if (!generatedEssay) return;
+    navigator.clipboard.writeText(generatedEssay);
+    setCopiedEssay(true);
+    setTimeout(() => setCopiedEssay(false), 2000);
+  };
+
+  const downloadEssay = (format: 'txt' | 'md') => {
+    if (!generatedEssay) return;
+    const element = document.createElement("a");
+    const file = new Blob([generatedEssay], { type: 'text/plain;charset=utf-8' });
+    element.href = URL.createObjectURL(file);
+    element.download = format === 'txt' ? 'essay_draft.txt' : 'essay_draft.md';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -61,7 +107,7 @@ function App() {
         reader.onload = (event) => {
           const content = event.target?.result;
           if (typeof content === 'string') {
-            setInput(prev => prev + `\n[File Content: ${file.name}]\n${content}\n`);
+            setStoryInput(prev => (prev ? prev + "\n\n" : "") + `[Content from ${file.name}]:\n${content}\n`);
             setIsParsing(false);
           }
         };
@@ -79,9 +125,8 @@ function App() {
           const arrayBuffer = event.target?.result;
           if (arrayBuffer instanceof ArrayBuffer) {
             try {
-              // @ts-ignore
               const result = await (window as any).mammoth.extractRawText({ arrayBuffer: arrayBuffer });
-              setInput(prev => prev + `\n[Document Content: ${file.name}]\n${result.value}\n`);
+              setStoryInput(prev => (prev ? prev + "\n\n" : "") + `[Content from ${file.name}]:\n${result.value}\n`);
             } catch (err: any) {
               setError(`Failed to parse Word document: ${err.message}`);
             }
@@ -102,7 +147,6 @@ function App() {
           const arrayBuffer = event.target?.result;
           if (arrayBuffer instanceof ArrayBuffer) {
             try {
-              // @ts-ignore
               const pdfjsLib = window['pdfjs-dist/build/pdf'];
               pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
               
@@ -113,12 +157,11 @@ function App() {
               for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const textContent = await page.getTextContent();
-                // @ts-ignore
                 const pageText = textContent.items.map((item: any) => item.str).join(' ');
                 fullText += pageText + '\n';
               }
               
-              setInput(prev => prev + `\n[PDF Content: ${file.name}]\n${fullText}\n`);
+              setStoryInput(prev => (prev ? prev + "\n\n" : "") + `[Content from ${file.name}]:\n${fullText}\n`);
             } catch (err: any) {
               setError(`Failed to parse PDF document: ${err.message}`);
             }
@@ -143,15 +186,51 @@ function App() {
     }
   };
 
-  const handleSend = async (customMessage?: string) => {
+  const extractEssayFromReply = (text: string): string => {
+    const markdownMatch = text.match(/```markdown\s*([\s\S]*?)\s*```/i);
+    if (markdownMatch && markdownMatch[1]) {
+      return markdownMatch[1].trim();
+    }
+    const genericMatch = text.match(/```\s*([\s\S]*?)\s*```/);
+    if (genericMatch && genericMatch[1]) {
+      return genericMatch[1].trim();
+    }
+    return text.trim();
+  };
+
+  const handleSend = async (customMessage?: string, isGenerate?: boolean) => {
+    const isGen = isGenerate ?? false;
+    // If generating essay, we require either story input, custom message, or standard chat input
     const messageToSend = customMessage || input;
-    if (!messageToSend.trim() || isLoading) return;
-    
-    const userMsg: Message = { role: 'user', content: messageToSend };
+    if (isGen && !storyInput.trim() && !messageToSend.trim()) {
+      setError("Please provide a story description or upload a document to generate an essay.");
+      return;
+    }
+
+    if (!isGen && !messageToSend.trim()) return;
+    if (isLoading) return;
+
+    // Construct standard visible message to show in the chat thread
+    const userMsgContent = isGen 
+      ? `✨ Generate Essay Draft (Target: ${targetProgram || 'Ivy League'}, Limit: ${wordLimit || 'Standard'})`
+      : messageToSend;
+
+    const userMsg: Message = { role: 'user', content: userMsgContent };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
     setError(null);
+
+    // Formulate final backend prompt combining form variables if in Generate mode
+    let backendPrompt = messageToSend;
+    if (isGen) {
+      backendPrompt = `Please write/revision the admissions essay based on these parameters:\n`;
+      if (targetProgram.trim()) backendPrompt += `- Target Program: ${targetProgram}\n`;
+      if (wordLimit.trim()) backendPrompt += `- Word Limit: ${wordLimit}\n`;
+      if (storyInput.trim()) backendPrompt += `- Story / Raw Background: ${storyInput}\n`;
+      if (messageToSend.trim()) backendPrompt += `- Additional User Direction: ${messageToSend}\n`;
+      backendPrompt += `\nEnsure the final essay conforms to Ivy League standards and complies with essayspro prompt manager rules. Output the essay draft cleanly, preferably inside a markdown code block (using \`\`\`markdown) so my workspace extracts it perfectly.`;
+    }
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -167,7 +246,7 @@ function App() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'local'}`
         },
-        body: JSON.stringify({ message: messageToSend, history: messages }),
+        body: JSON.stringify({ message: backendPrompt, history: messages, isChatOnly: !isGen }),
       });
 
       const responseText = await response.text();
@@ -180,7 +259,17 @@ function App() {
 
       if (!response.ok) throw new Error(data.error || 'Server error');
       
-      setMessages(prev => [...prev, { role: 'ai', content: data.reply }]);
+      const aiReply = data.reply;
+      setMessages(prev => [...prev, { role: 'ai', content: aiReply }]);
+
+      // Update right-hand workspace essay state if in generate mode, or if a code block is detected
+      const extractedEssay = extractEssayFromReply(aiReply);
+      if (isGen || aiReply.includes('```')) {
+        setGeneratedEssay(extractedEssay);
+        // On mobile, auto-switch to preview to show the work
+        setActiveTab('preview');
+      }
+
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -195,211 +284,372 @@ function App() {
     }
   };
 
-  // Quick Start Suggestions
+  // Onboarding Suggetions
   const suggestions = [
-    { title: "Draft a Personal Statement", text: "I want to draft a personal statement highlighting my passion for computer science and community volunteering." },
-    { title: "Refine Ivy League Supplement", text: "Help me structure an elegant supplement response explaining 'Why Penn' for my undergraduate application." },
-    { title: "Review Tone & Vocabulary", text: "Here is my essay introduction. Can you check its tone for flow, maturity, and academic rigor?" }
+    { title: "Draft a Personal Statement", text: "Highlight my passion for computer science and community volunteering." },
+    { title: "Refine Ivy Supplement", text: "Structure a supplement response explaining 'Why Penn' for my application." },
+    { title: "Review Tone & Flow", text: "Check my essay introduction for flow, maturity, and academic rigor." }
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800 antialiased selection:bg-indigo-500/10">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800 antialiased selection:bg-indigo-500/10 h-screen overflow-hidden">
       
-      {/* 1. Header (Corporate Nav Bar) */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-4 flex justify-between items-center sticky top-0 z-30 shadow-sm transition-all duration-300">
-        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setMessages([])}>
-          <div className="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-indigo-500 rounded-xl flex items-center justify-center text-white font-bold shadow-indigo-200 shadow-xl border border-indigo-400/20 transform hover:scale-105 transition-transform">
-            <GraduationCap size={22} className="text-white" />
+      {/* 1. Corporate Header */}
+      <header className="bg-white border-b border-slate-100 px-6 py-3.5 flex justify-between items-center z-30 shadow-sm shrink-0">
+        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => { setMessages([]); setGeneratedEssay(''); }}>
+          <div className="w-9 h-9 bg-gradient-to-tr from-indigo-600 to-indigo-500 rounded-xl flex items-center justify-center text-white font-bold shadow-indigo-150 shadow-lg border border-indigo-400/20 transform hover:scale-105 transition-transform">
+            <GraduationCap size={20} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">essayspro</h1>
-            <span className="text-[9px] text-indigo-600 uppercase font-black tracking-widest block mt-0.5">Ivy League Standard</span>
+            <h1 className="text-lg font-black text-slate-900 tracking-tight leading-none">essayspro</h1>
+            <span className="text-[8px] text-indigo-600 uppercase font-black tracking-widest block mt-0.5">Ivy League Standard</span>
           </div>
         </div>
 
-        {/* Corporate Nav Menu Links */}
-        <nav className="flex items-center gap-1 md:gap-2">
+        {/* Corporate Navigation */}
+        <nav className="flex items-center gap-1.5">
           <button 
             onClick={() => setActiveModal('about')}
-            className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-1.5"
+            className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-all flex items-center gap-1"
           >
-            <Info size={14} />
+            <Info size={13} />
             <span className="hidden sm:inline">About Us</span>
           </button>
           
           <button 
             onClick={() => setActiveModal('disclaimer')}
-            className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all flex items-center gap-1.5"
+            className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-all flex items-center gap-1"
           >
-            <ShieldAlert size={14} />
+            <ShieldAlert size={13} />
             <span className="hidden sm:inline">Disclaimer</span>
           </button>
 
           <button 
             onClick={() => setActiveModal('contact')}
-            className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-100 rounded-xl transition-all flex items-center gap-1.5 hover:shadow-lg active:scale-95"
+            className="px-3.5 py-1.5 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-100 rounded-lg transition-all flex items-center gap-1 hover:shadow-lg active:scale-95"
           >
-            <Mail size={14} />
+            <Mail size={13} />
             <span>Contact</span>
           </button>
         </nav>
       </header>
 
-      {/* 2. Main Workspace (Dynamic Layout) */}
-      <main className="flex-1 flex flex-col w-full relative">
-        {messages.length === 0 ? (
+      {/* Responsive mobile Tab Toggles */}
+      <div className="flex md:hidden border-b border-slate-100 bg-white shrink-0">
+        <button
+          onClick={() => setActiveTab('editor')}
+          className={`flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 flex items-center justify-center gap-2 transition-all ${
+            activeTab === 'editor' 
+              ? 'border-indigo-600 text-indigo-600' 
+              : 'border-transparent text-slate-400'
+          }`}
+        >
+          <Sparkles size={14} /> Admissions Chat & Info
+        </button>
+        <button
+          onClick={() => setActiveTab('preview')}
+          className={`flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 flex items-center justify-center gap-2 transition-all ${
+            activeTab === 'preview' 
+              ? 'border-indigo-600 text-indigo-600' 
+              : 'border-transparent text-slate-400'
+          }`}
+        >
+          <FileText size={14} /> Workspace Preview
+          {generatedEssay && (
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span>
+          )}
+        </button>
+      </div>
+
+      {/* 2. Main Workspace layout split */}
+      <main className="flex-1 flex flex-col md:flex-row w-full overflow-hidden">
+        
+        {/* ================= LEFT COLUMN: ADMISSIONS DATA & CHAT ================= */}
+        <section className={`w-full md:w-[40%] flex flex-col border-r border-slate-100 bg-white h-full overflow-hidden ${
+          activeTab === 'editor' ? 'flex' : 'hidden md:flex'
+        }`}>
           
-          /* ================= GOOGLE-STYLE CENTRED HOMEPAGE ================= */
-          <div className="flex-1 flex flex-col items-center justify-center px-4 max-w-3xl mx-auto w-full py-12 animate-fade-in">
-            <div className="flex flex-col items-center text-center mb-9">
-              <div className="w-16 h-16 bg-gradient-to-tr from-indigo-600 to-indigo-500 rounded-2xl flex items-center justify-center text-white font-bold shadow-indigo-100 shadow-2xl border border-indigo-400/20 mb-4 animate-scale-in">
-                <GraduationCap size={36} />
+          {/* Admissions Context Card (Collapsible scrollable profile details) */}
+          <div className="border-b border-slate-100 p-4 bg-slate-50/50 shrink-0 overflow-y-auto max-h-[45%] md:max-h-[38%] custom-scrollbar">
+            <div className="flex items-center gap-2 mb-3">
+              <BookOpen size={16} className="text-indigo-600" />
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Admissions Profile Ingredients</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 mb-2.5">
+              {/* Target Program Box */}
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Target Program/Major</label>
+                <input 
+                  type="text" 
+                  value={targetProgram}
+                  onChange={(e) => setTargetProgram(e.target.value)}
+                  placeholder="e.g. Wharton MBA, CS PhD"
+                  className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-300 font-medium transition-all"
+                />
               </div>
-              <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-2">
-                essays<span className="text-indigo-600">pro</span>
-              </h2>
-              <p className="text-sm md:text-base text-slate-400 font-medium tracking-wide max-w-md">
-                Ivy League standard generative outlining and vocabulary sculpting assistant.
-              </p>
+
+              {/* Word Limit Box */}
+              <div>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Word Limit Goal</label>
+                <input 
+                  type="text" 
+                  value={wordLimit}
+                  onChange={(e) => setWordLimit(e.target.value)}
+                  placeholder="e.g. 500 words, 650 max"
+                  className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-300 font-medium transition-all"
+                />
+              </div>
             </div>
 
-            {/* Centered Search/Chat Input Box */}
-            <div className="w-full bg-white border border-slate-200 focus-within:border-indigo-500 rounded-3xl p-3 shadow-xl shadow-slate-100/50 hover:shadow-2xl hover:shadow-slate-100/80 transition-all duration-300 max-w-2xl focus-within:ring-4 focus-within:ring-indigo-100">
-              <div className="flex items-end gap-2 relative">
+            {/* Background Story Textarea Input */}
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Story, Failures & Accomplishments</label>
                 <button 
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isParsing}
-                  className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-2xl transition-all disabled:opacity-30 disabled:pointer-events-none"
-                  title="Upload Requirements"
+                  className="text-[9px] font-black text-indigo-600 hover:text-indigo-700 hover:underline flex items-center gap-0.5"
+                  title="Upload resume or documents"
                 >
-                  <Paperclip size={20} />
+                  <Paperclip size={10} /> Upload Doc instead
                 </button>
                 <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".txt,.pdf,.docx" />
-
-                <textarea 
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  disabled={isParsing}
-                  className="flex-1 border-0 focus:outline-none focus:ring-0 resize-none bg-transparent py-2.5 px-2 text-sm text-slate-800 placeholder-slate-400 min-h-[44px] disabled:opacity-50"
-                  placeholder={isParsing ? "Extracting text from document..." : "Paste essay requirements or type your story details..."}
-                  rows={1}
-                />
-                
-                <button 
-                  onClick={() => handleSend()}
-                  disabled={isLoading || isParsing || !input.trim()}
-                  className="p-3.5 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-30 disabled:scale-100 disabled:pointer-events-none"
-                >
-                  <Send size={18} />
-                </button>
               </div>
+              
+              <textarea
+                value={storyInput}
+                onChange={(e) => setStoryInput(e.target.value)}
+                rows={3}
+                placeholder="Write down your life and academic experiences, whatever you think is worth writing (achievements or failures, anything that matters to you, special or unique). It is better if they are coupled with your own understanding or enlightenment—not necessarily shining or big, but unique. No grammar or quality requirements."
+                className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl p-3 text-slate-800 placeholder-slate-350 leading-relaxed font-medium transition-all resize-none"
+              />
             </div>
-
+            
             {isParsing && (
-              <div className="w-full max-w-2xl mt-3 flex items-center justify-center gap-2 text-slate-500 text-xs font-bold animate-pulse animate-fade-in">
-                <Loader2 size={16} className="animate-spin text-indigo-600" />
+              <div className="flex items-center gap-1.5 text-slate-500 text-[10px] font-bold mt-2 animate-pulse">
+                <Loader2 size={12} className="animate-spin text-indigo-600" />
                 <span>Reading and extracting document content...</span>
               </div>
             )}
-
-            {/* Quick Suggestions Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-2xl mt-8">
-              {suggestions.map((s, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSend(s.text)}
-                  className="text-left p-4 bg-white border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/20 rounded-2xl shadow-sm hover:shadow-md transition-all group duration-200"
-                >
-                  <h3 className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 flex items-center gap-1">
-                    {s.title}
-                    <ChevronRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </h3>
-                  <p className="text-[11px] text-slate-400 group-hover:text-slate-500 mt-1.5 leading-relaxed line-clamp-2">
-                    {s.text}
-                  </p>
-                </button>
-              ))}
-            </div>
-
-            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold mt-12 text-center">
-              🔒 Premium AI Outliner &bull; Fully Encrypted Connections
-            </p>
           </div>
-        ) : (
-          
-          /* ================= CONVERSATIONAL CHAT THREAD ================= */
-          <div className="flex-1 flex flex-col w-full animate-fade-in">
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto px-4 py-8 md:px-8 space-y-6 max-w-4xl mx-auto w-full">
-              {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'ai' ? 'justify-start animate-slide-up' : 'justify-end'}`}>
-                  <div className={`max-w-[85%] md:max-w-[75%] p-4 md:p-5 rounded-2xl shadow-sm leading-relaxed border ${
-                    msg.role === 'ai' 
-                      ? 'bg-white border-slate-100 text-slate-800 rounded-tl-none' 
-                      : 'bg-indigo-600 border-indigo-700 text-white rounded-tr-none shadow-md shadow-indigo-100'
-                  }`}>
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+
+          {/* Conversations Thread (Fills remainder) */}
+          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 h-full bg-slate-50/20 custom-scrollbar">
+            {messages.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3 opacity-80">
+                <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm">
+                  <GraduationCap size={24} />
+                </div>
+                <h4 className="text-sm font-bold text-slate-800">Your Co-Pilot Admissions Chat</h4>
+                <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
+                  Fill in your admissions profile parameters above, ask queries below, or click suggestions to coordinate your narrative outline.
+                </p>
+                
+                {/* Suggestions triggers */}
+                <div className="w-full space-y-2 pt-3">
+                  {suggestions.map((s, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSend(s.text)}
+                      className="w-full text-left p-3 bg-white border border-slate-200/60 hover:border-indigo-100 hover:bg-indigo-50/15 rounded-xl shadow-xs transition-all text-xs flex items-start gap-2 group"
+                    >
+                      <Sparkles size={12} className="text-indigo-500 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold text-slate-800 block group-hover:text-indigo-600 leading-tight">{s.title}</span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5 line-clamp-1">{s.text}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {messages.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
+                    <div className={`max-w-[85%] p-3.5 rounded-2xl text-xs leading-relaxed border ${
+                      msg.role === 'ai' 
+                        ? 'bg-white border-slate-100 text-slate-800 rounded-tl-none shadow-sm shadow-slate-100/50' 
+                        : 'bg-indigo-600 border-indigo-700 text-white rounded-tr-none shadow-md shadow-indigo-100'
+                    }`}>
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-              
-              {isLoading && (
-                <div className="flex items-center gap-2.5 text-slate-400 text-xs font-semibold animate-pulse py-2">
-                  <Loader2 size={16} className="animate-spin text-indigo-600" /> Analyzing vocabulary standard...
-                </div>
-              )}
-
-              {isParsing && (
-                <div className="flex items-center gap-2.5 text-slate-400 text-xs font-semibold animate-pulse py-2">
-                  <Loader2 size={16} className="animate-spin text-indigo-600" /> Extracting document text...
-                </div>
-              )}
-              
-              {error && (
-                <div className="flex items-center gap-2.5 text-red-600 bg-red-50 p-4 rounded-2xl border border-red-100 text-sm shadow-sm">
-                  <AlertCircle size={18} /> 
-                  <span className="font-medium">{error}</span>
-                </div>
-              )}
-              
-              <div ref={chatEndRef} />
-            </div>
-
-            {/* Bottom sticky input bar */}
-            <div className="p-4 md:p-6 bg-white border-t border-slate-100 sticky bottom-0 z-10 shadow-lg shadow-slate-100">
-              <div className="max-w-3xl mx-auto flex items-end gap-2 relative">
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isParsing}
-                  className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-2xl transition-all disabled:opacity-30 disabled:pointer-events-none"
-                  title="Upload Requirements"
-                >
-                  <Paperclip size={20} />
-                </button>
-                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".txt,.pdf,.docx" />
+                ))}
                 
-                <textarea 
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  disabled={isParsing}
-                  className="flex-1 border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 rounded-2xl p-4 bg-slate-50 resize-none transition-all text-sm min-h-[52px] disabled:opacity-50"
-                  placeholder={isParsing ? "Extracting text from document..." : "Ask a follow-up, paste a prompt or rewrite requirements..."}
-                  rows={1}
-                />
+                {isLoading && (
+                  <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold animate-pulse py-1">
+                    <Loader2 size={12} className="animate-spin text-indigo-600" /> Sculpting admissions vocabulary standard...
+                  </div>
+                )}
                 
+                {error && (
+                  <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3.5 rounded-xl border border-red-100 text-xs font-semibold shadow-xs">
+                    <AlertCircle size={14} className="shrink-0" /> 
+                    <span>{error}</span>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+            )}
+          </div>
+
+          {/* Sticky Bottom Inputs Area */}
+          <div className="p-3 bg-white border-t border-slate-100 shrink-0">
+            <div className="flex flex-col gap-2 w-full">
+              <textarea 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyPress}
+                disabled={isParsing}
+                className="w-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl px-3.5 py-2.5 bg-slate-50/50 resize-none transition-all text-xs min-h-[44px] max-h-[80px] leading-relaxed disabled:opacity-50"
+                placeholder={isParsing ? "Extracting document..." : "Ask follow-ups, paste essay segments, or critique tone..."}
+                rows={1}
+              />
+              
+              {/* Premium Dual Buttons row */}
+              <div className="flex items-center gap-2 w-full">
+                
+                {/* Standard Chat Button */}
                 <button 
-                  onClick={() => handleSend()}
+                  onClick={() => handleSend(undefined, false)}
                   disabled={isLoading || isParsing || !input.trim()}
-                  className="p-4 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:pointer-events-none"
+                  className="flex-1 py-2.5 px-3 bg-slate-100 hover:bg-slate-200/80 text-slate-700 rounded-xl font-extrabold text-xs transition-all active:scale-97 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none"
+                  title="Ask a standard follow-up question"
                 >
-                  <Send size={18} />
+                  <Send size={12} />
+                  <span>Chat / Critique</span>
                 </button>
+
+                {/* Specialized Generate Button */}
+                <button 
+                  onClick={() => handleSend(undefined, true)}
+                  disabled={isLoading || isParsing || (!storyInput.trim() && !input.trim())}
+                  className="flex-1 py-2.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs shadow-md shadow-indigo-100 hover:shadow-lg transition-all active:scale-97 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none"
+                  title="Instruct the AI to write a polished essay"
+                >
+                  <Sparkles size={12} />
+                  <span>Generate Essay</span>
+                </button>
+
               </div>
             </div>
           </div>
-        )}
+
+        </section>
+
+        {/* ================= RIGHT COLUMN: LIVE ESSAY PREVIEW & DOWNLOADS ================= */}
+        <section className={`w-full md:w-[60%] flex flex-col bg-slate-50 h-full overflow-hidden ${
+          activeTab === 'preview' ? 'flex' : 'hidden md:flex'
+        }`}>
+          
+          {/* Document Workspace Header Bar */}
+          <div className="bg-white border-b border-slate-100 px-5 py-3 shrink-0 flex justify-between items-center shadow-xs">
+            <div className="flex items-center gap-2">
+              <FileText size={16} className="text-indigo-600" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">active_essay_draft.md</span>
+                {generatedEssay && (
+                  <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider">Draft Sync</span>
+                )}
+              </div>
+            </div>
+
+            {/* Document Controls toolbar */}
+            <div className="flex items-center gap-1">
+              {generatedEssay && (
+                <>
+                  {/* Copy Button */}
+                  <button 
+                    onClick={copyEssayToClipboard}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1 border transition-all ${
+                      copiedEssay 
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                        : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200 shadow-xs'
+                    }`}
+                  >
+                    {copiedEssay ? <Check size={12} /> : <Copy size={12} />}
+                    <span>{copiedEssay ? 'Copied!' : 'Copy'}</span>
+                  </button>
+
+                  {/* Download Dropdowns */}
+                  <button 
+                    onClick={() => downloadEssay('txt')}
+                    className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 rounded-lg text-xs font-extrabold flex items-center gap-1 shadow-xs transition-all"
+                  >
+                    <Download size={12} />
+                    <span>Download (.txt)</span>
+                  </button>
+
+                  <button 
+                    onClick={() => downloadEssay('md')}
+                    className="px-3 py-1.5 bg-indigo-550/5 hover:bg-indigo-600 hover:text-white border border-indigo-150 text-indigo-700 rounded-lg text-xs font-black flex items-center gap-1 shadow-xs transition-all hidden sm:flex"
+                  >
+                    <Download size={12} />
+                    <span>Download (.md)</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Workspace body editor area */}
+          <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col h-full bg-slate-50">
+            {!generatedEssay ? (
+              
+              /* Pre-generation premium empty state */
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 max-w-md mx-auto space-y-4">
+                <div className="w-16 h-16 bg-white border border-slate-200/50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm animate-pulse">
+                  <Sparkles size={28} />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-black text-slate-800">Your Living Document Workspace</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Once you configure your admissions story and program details on the left pane and click **"Generate Essay"**, the Ivy League admissions consultant draft will appear here in real time.
+                  </p>
+                </div>
+                
+                <div className="w-full p-4 bg-white/70 border border-slate-100 rounded-2xl text-left space-y-2.5 shadow-xs">
+                  <div className="flex items-center gap-2 text-indigo-700 text-xs font-bold">
+                    <CheckCircle size={14} className="shrink-0" />
+                    <span>Redesign Highlights</span>
+                  </div>
+                  <ul className="text-[11px] text-slate-500 space-y-1.5 leading-normal font-medium pl-1 list-none">
+                    <li className="flex items-start gap-1">
+                      <span className="text-indigo-600 mr-1">•</span>
+                      <span>**Live Editable Workspace:** Directly edit the AI's drafts inside this right-hand pane manually.</span>
+                    </li>
+                    <li className="flex items-start gap-1">
+                      <span className="text-indigo-600 mr-1">•</span>
+                      <span>**One-Click Copy & Export:** Instant copy to clipboard and standard clean markdown/txt downloads.</span>
+                    </li>
+                    <li className="flex items-start gap-1">
+                      <span className="text-indigo-600 mr-1">•</span>
+                      <span>**Dual Button Control:** Toggle cleanly between standard conversational chats and formal essay generation.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            ) : (
+              
+              /* Live interactive document viewer & editor */
+              <div className="flex-1 flex flex-col bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm shadow-slate-100 h-full relative">
+                <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 shrink-0">
+                  <span>Interactive Editor Pane</span>
+                  <span className="flex items-center gap-1 text-emerald-600 font-bold"><Check size={10} /> Editable - tweak draft directly</span>
+                </div>
+                
+                <textarea 
+                  value={generatedEssay}
+                  onChange={(e) => setGeneratedEssay(e.target.value)}
+                  className="flex-1 w-full h-full text-sm text-slate-800 placeholder-slate-300 font-medium font-sans leading-relaxed focus:outline-none resize-none bg-transparent custom-scrollbar py-2"
+                  placeholder="Click here to type or modify the essay draft..."
+                />
+              </div>
+            )}
+          </div>
+
+        </section>
+
       </main>
 
       {/* ================= PREMIUM GLASSMORPHISM MODAL DIALOGS ================= */}
@@ -539,7 +789,7 @@ function App() {
                     <span>{copied ? 'Copied!' : 'Copy to Clipboard'}</span>
                   </button>
                 </div>
-
+ 
                 <div className="text-[10px] text-center text-slate-400 font-medium leading-normal">
                   Response Window: Less than 12 Hours &bull; Mon-Sun
                 </div>
