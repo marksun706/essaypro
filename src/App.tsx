@@ -15,8 +15,7 @@ import {
   Download, 
   Sparkles, 
   FileText, 
-  BookOpen,
-  CheckCircle
+  BookOpen
 } from 'lucide-react';
 
 interface Message {
@@ -201,11 +200,14 @@ function App() {
     // If generating essay, we require either story input, custom message, or standard chat input
     const messageToSend = customMessage || input;
     if (isGen && !storyInput.trim() && !messageToSend.trim()) {
-      setError("Please provide a story description or upload a document to generate an essay.");
+      setError("Please provide background story details in the Admissions Profile (bottom) or type instructions in the Chatbox first to generate your essay.");
       return;
     }
 
-    if (!isGen && !messageToSend.trim()) return;
+    if (!isGen && !messageToSend.trim()) {
+      setError("Please type a message or prompt in the Chatbox first!");
+      return;
+    }
     if (isLoading) return;
 
     // Construct standard visible message to show in the chat thread
@@ -420,7 +422,7 @@ function App() {
                 {/* Standard Chat Button */}
                 <button 
                   onClick={() => handleSend(undefined, false)}
-                  disabled={isLoading || isParsing || !input.trim()}
+                  disabled={isLoading || isParsing}
                   className="flex-1 py-2.5 px-3 bg-slate-100 hover:bg-slate-200/80 text-slate-700 rounded-xl font-extrabold text-xs transition-all active:scale-97 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none"
                   title="Ask a standard follow-up question"
                 >
@@ -431,7 +433,7 @@ function App() {
                 {/* Specialized Generate Button */}
                 <button 
                   onClick={() => handleSend(undefined, true)}
-                  disabled={isLoading || isParsing || (!storyInput.trim() && !input.trim())}
+                  disabled={isLoading || isParsing}
                   className="flex-1 py-2.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs shadow-md shadow-indigo-100 hover:shadow-lg transition-all active:scale-97 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none"
                   title="Instruct the AI to write a polished essay"
                 >
@@ -576,27 +578,6 @@ function App() {
                   <p className="text-xs text-slate-400 leading-relaxed">
                     Once you configure your admissions story and program details on the left pane and click **"Generate Essay"**, the admissions consultant draft will appear here in real time.
                   </p>
-                </div>
-                
-                <div className="w-full p-4 bg-white/70 border border-slate-100 rounded-2xl text-left space-y-2.5 shadow-xs">
-                  <div className="flex items-center gap-2 text-indigo-700 text-xs font-bold">
-                    <CheckCircle size={14} className="shrink-0" />
-                    <span>Redesign Highlights</span>
-                  </div>
-                  <ul className="text-[11px] text-slate-500 space-y-1.5 leading-normal font-medium pl-1 list-none">
-                    <li className="flex items-start gap-1">
-                      <span className="text-indigo-600 mr-1">•</span>
-                      <span>**Live Editable Workspace:** Directly edit the AI's drafts inside this right-hand pane manually.</span>
-                    </li>
-                    <li className="flex items-start gap-1">
-                      <span className="text-indigo-600 mr-1">•</span>
-                      <span>**One-Click Copy & Export:** Instant copy to clipboard and standard clean markdown/txt downloads.</span>
-                    </li>
-                    <li className="flex items-start gap-1">
-                      <span className="text-indigo-600 mr-1">•</span>
-                      <span>**Dual Button Control:** Toggle cleanly between standard conversational chats and formal essay generation.</span>
-                    </li>
-                  </ul>
                 </div>
               </div>
             ) : (
