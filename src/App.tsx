@@ -49,6 +49,7 @@ function App() {
   const [wordLimit, setWordLimit] = useState<string>('');
   const [targetProgram, setTargetProgram] = useState<string>('');
   const [generatedEssay, setGeneratedEssay] = useState<string>('');
+  const [isGeneratingEssay, setIsGeneratingEssay] = useState<boolean>(false);
   
   // UI states
   const [copiedEssay, setCopiedEssay] = useState<boolean>(false);
@@ -219,6 +220,9 @@ function App() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
+    if (isGen) {
+      setIsGeneratingEssay(true);
+    }
     setError(null);
 
     // Formulate final backend prompt combining form variables if in Generate mode
@@ -260,20 +264,27 @@ function App() {
       if (!response.ok) throw new Error(data.error || 'Server error');
       
       const aiReply = data.reply;
-      setMessages(prev => [...prev, { role: 'ai', content: aiReply }]);
-
-      // Update right-hand workspace essay state if in generate mode, or if a code block is detected
       const extractedEssay = extractEssayFromReply(aiReply);
-      if (isGen || aiReply.includes('```')) {
+
+      if (isGen) {
         setGeneratedEssay(extractedEssay);
-        // On mobile, auto-switch to preview to show the work
+        setMessages(prev => [...prev, { 
+          role: 'ai', 
+          content: `✨ I have successfully generated your admissions essay draft based on your profile details! You can now view, directly edit, copy, or download it in the Workspace Preview on the right.\n\nFeel free to ask follow-up questions in the chatbox below to critique, rewrite, or polish specific sections!`
+        }]);
         setActiveTab('preview');
+      } else {
+        setMessages(prev => [...prev, { role: 'ai', content: aiReply }]);
+        if (aiReply.includes('```')) {
+          setGeneratedEssay(extractedEssay);
+        }
       }
 
     } catch (err: any) {
       setError(err.message);
     } finally {
       setIsLoading(false);
+      setIsGeneratingEssay(false);
     }
   };
 
@@ -565,7 +576,20 @@ function App() {
           </div>
 
           {/* Workspace body editor area */}
-          <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col h-full bg-slate-50">
+          <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col h-full bg-slate-50 relative">
+            {isLoading && isGeneratingEssay && (
+              <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-6 text-center space-y-4 animate-fade-in">
+                <div className="w-14 h-14 bg-white border border-slate-200/50 rounded-2xl flex items-center justify-center text-indigo-650 shadow-md">
+                  <Sparkles className="animate-spin text-indigo-600" size={24} />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider animate-pulse">Sculpting Your Essay Draft...</h3>
+                  <p className="text-[10px] text-slate-400 max-w-xs leading-relaxed font-semibold">
+                    Analyzing admissions variables, structuring narrative, and editing to Ivy League standards. This may take up to a few seconds.
+                  </p>
+                </div>
+              </div>
+            )}
             {!generatedEssay ? (
               
               /* Pre-generation premium empty state */
