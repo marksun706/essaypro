@@ -300,7 +300,6 @@ function App() {
           </div>
           <div>
             <h1 className="text-lg font-black text-slate-900 tracking-tight leading-none">essayspro</h1>
-            <span className="text-[8px] text-indigo-600 uppercase font-black tracking-widest block mt-0.5">Ivy League Standard</span>
           </div>
         </div>
 
