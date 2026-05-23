@@ -50,6 +50,7 @@ function App() {
   const [targetProgram, setTargetProgram] = useState<string>('');
   const [generatedEssay, setGeneratedEssay] = useState<string>('');
   const [isGeneratingEssay, setIsGeneratingEssay] = useState<boolean>(false);
+  const [isWorkspaceActive, setIsWorkspaceActive] = useState<boolean>(false);
   
   // UI states
   const [copiedEssay, setCopiedEssay] = useState<boolean>(false);
@@ -106,6 +107,7 @@ function App() {
           const content = event.target?.result;
           if (typeof content === 'string') {
             setStoryInput(prev => (prev ? prev + "\n\n" : "") + `[Content from ${file.name}]:\n${content}\n`);
+            setIsWorkspaceActive(true);
             setIsParsing(false);
           }
         };
@@ -125,6 +127,7 @@ function App() {
             try {
               const result = await (window as any).mammoth.extractRawText({ arrayBuffer: arrayBuffer });
               setStoryInput(prev => (prev ? prev + "\n\n" : "") + `[Content from ${file.name}]:\n${result.value}\n`);
+              setIsWorkspaceActive(true);
             } catch (err: any) {
               setError(`Failed to parse Word document: ${err.message}`);
             }
@@ -160,6 +163,7 @@ function App() {
               }
               
               setStoryInput(prev => (prev ? prev + "\n\n" : "") + `[Content from ${file.name}]:\n${fullText}\n`);
+              setIsWorkspaceActive(true);
             } catch (err: any) {
               setError(`Failed to parse PDF document: ${err.message}`);
             }
@@ -215,6 +219,8 @@ function App() {
     const userMsgContent = isGen 
       ? `✨ Generate Essay Draft (Target: ${targetProgram || 'Ivy League'}, Limit: ${wordLimit || 'Standard'})`
       : messageToSend;
+
+    setIsWorkspaceActive(true);
 
     const userMsg: Message = { role: 'user', content: userMsgContent };
     setMessages(prev => [...prev, userMsg]);
@@ -300,7 +306,7 @@ function App() {
       
       {/* 1. Corporate Header */}
       <header className="bg-white border-b border-slate-100 px-6 py-3.5 flex justify-between items-center z-30 shadow-sm shrink-0">
-        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => { setMessages([]); setGeneratedEssay(''); }}>
+        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => { setMessages([]); setGeneratedEssay(''); setStoryInput(''); setWordLimit(''); setTargetProgram(''); setIsWorkspaceActive(false); }}>
           <div className="w-9 h-9 bg-gradient-to-tr from-indigo-600 to-indigo-500 rounded-xl flex items-center justify-center text-white font-bold shadow-indigo-150 shadow-lg border border-indigo-400/20 transform hover:scale-105 transition-transform">
             <GraduationCap size={20} className="text-white" />
           </div>
@@ -338,299 +344,393 @@ function App() {
       </header>
 
       {/* Responsive mobile Tab Toggles */}
-      <div className="flex md:hidden border-b border-slate-100 bg-white shrink-0">
-        <button
-          onClick={() => setActiveTab('editor')}
-          className={`flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 flex items-center justify-center gap-2 transition-all ${
-            activeTab === 'editor' 
-              ? 'border-indigo-600 text-indigo-600' 
-              : 'border-transparent text-slate-400'
-          }`}
-        >
-          <Sparkles size={14} /> Admissions Chat & Info
-        </button>
-        <button
-          onClick={() => setActiveTab('preview')}
-          className={`flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 flex items-center justify-center gap-2 transition-all ${
-            activeTab === 'preview' 
-              ? 'border-indigo-600 text-indigo-600' 
-              : 'border-transparent text-slate-400'
-          }`}
-        >
-          <FileText size={14} /> Workspace Preview
-          {generatedEssay && (
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span>
-          )}
-        </button>
-      </div>
+      {isWorkspaceActive && (
+        <div className="flex md:hidden border-b border-slate-100 bg-white shrink-0 animate-fade-in">
+          <button
+            onClick={() => setActiveTab('editor')}
+            className={`flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 flex items-center justify-center gap-2 transition-all ${
+              activeTab === 'editor' 
+                ? 'border-indigo-600 text-indigo-600' 
+                : 'border-transparent text-slate-400'
+            }`}
+          >
+            <Sparkles size={14} /> Admissions Chat & Info
+          </button>
+          <button
+            onClick={() => setActiveTab('preview')}
+            className={`flex-1 py-3 text-xs font-black tracking-wider uppercase border-b-2 flex items-center justify-center gap-2 transition-all ${
+              activeTab === 'preview' 
+                ? 'border-indigo-600 text-indigo-600' 
+                : 'border-transparent text-slate-400'
+            }`}
+          >
+            <FileText size={14} /> Workspace Preview
+            {generatedEssay && (
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* 2. Main Workspace layout split */}
       <main className="flex-1 flex flex-col md:flex-row w-full overflow-hidden">
         
-        {/* ================= LEFT COLUMN: ADMISSIONS DATA & CHAT ================= */}
-        <section className={`w-full md:w-[40%] flex flex-col border-r border-slate-100 bg-white h-full overflow-hidden ${
-          activeTab === 'editor' ? 'flex' : 'hidden md:flex'
-        }`}>
-          
-          {/* Top Section: Conversations Thread (Scrollable) */}
-          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 h-full bg-slate-50/20 custom-scrollbar">
-            {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3 opacity-80 my-auto">
-                <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm animate-scale-in">
-                  <GraduationCap size={24} />
-                </div>
-                <h4 className="text-sm font-bold text-slate-800">Your Co-Pilot Admissions Chat</h4>
-                <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
-                  Welcome! Paste your essay prompts, instructions, or specific requirements in the Chatbox below to begin editing, brainstorming, or writing your essay.
+        {!isWorkspaceActive ? (
+          /* ================= GOOGLE-LIKE LANDING PAGE ================= */
+          <div className="flex-1 flex flex-col items-center justify-center px-4 max-w-2xl mx-auto w-full pb-20 relative animate-fade-in">
+            
+            {/* Logo and Brand */}
+            <div className="flex flex-col items-center text-center mb-8 gap-4 select-none">
+              <div className="w-16 h-16 bg-gradient-to-tr from-indigo-600 to-indigo-500 rounded-[22px] flex items-center justify-center text-white font-bold shadow-indigo-150 shadow-xl border border-indigo-400/20 transform hover:rotate-6 hover:scale-105 transition-all duration-300">
+                <GraduationCap size={32} className="text-white" />
+              </div>
+              <div className="space-y-1">
+                <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-none">essayspro</h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest block pt-1">
+                  Ivy League Admissions Co-Pilot & Workspace
                 </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {messages.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
-                    <div className={`max-w-[85%] p-3.5 rounded-2xl text-xs leading-relaxed border ${
-                      msg.role === 'ai' 
-                        ? 'bg-white border-slate-100 text-slate-800 rounded-tl-none shadow-sm shadow-slate-100/50' 
-                        : 'bg-indigo-600 border-indigo-700 text-white rounded-tr-none shadow-md shadow-indigo-100'
-                    }`}>
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
-                    </div>
-                  </div>
-                ))}
-                
-                {isLoading && (
-                  <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold animate-pulse py-1">
-                    <Loader2 size={12} className="animate-spin text-indigo-600" /> Sculpting admissions vocabulary standard...
-                  </div>
-                )}
-                
-                {error && (
-                  <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3.5 rounded-xl border border-red-100 text-xs font-semibold shadow-xs">
-                    <AlertCircle size={14} className="shrink-0" /> 
-                    <span>{error}</span>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-            )}
-          </div>
+            </div>
 
-          {/* Middle Section: Large Chatbox & Generate Button */}
-          <div className="p-4 bg-white border-t border-slate-100 shrink-0">
-            <div className="flex flex-col gap-2 w-full">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Active Chatbox</label>
+            {/* Central Large Chatbox */}
+            <div className="w-full bg-white border border-slate-200/80 focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-500 rounded-[24px] p-4 shadow-xl shadow-slate-150/40 focus-within:shadow-indigo-100/30 transition-all duration-300 flex flex-col gap-3">
+              <textarea 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                disabled={isParsing}
+                className="w-full border-0 focus:outline-none focus:ring-0 resize-none bg-transparent text-sm min-h-[90px] max-h-[180px] leading-relaxed p-0 placeholder-slate-450 focus:placeholder-slate-350 transition-all"
+                placeholder={isParsing ? "Extracting document..." : "Type essay questions, requirements, or raw background details here..."}
+              />
               
-              {/* ChatGPT-style text box with Send icon inside it */}
-              <div className="relative border border-slate-200 focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-500 rounded-2xl p-3 bg-slate-50/50 focus-within:bg-white transition-all flex flex-col gap-2">
-                <textarea 
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  disabled={isParsing}
-                  className="w-full border-0 focus:outline-none focus:ring-0 resize-none bg-transparent text-xs min-h-[115px] max-h-[220px] leading-relaxed p-0 placeholder-slate-450 disabled:opacity-50"
-                  placeholder={isParsing ? "Extracting document..." : "Paste essay questions, prompts, or specific requirements here..."}
-                />
-                
-                {/* Bottom bar of the input box */}
-                <div className="flex justify-between items-center mt-1 shrink-0">
-                  <div className="text-[9px] text-slate-400 font-semibold">
-                    Press <span className="font-bold text-slate-500">Enter</span> to chat
-                  </div>
-                  
-                  {/* Integrated Send Icon Button */}
+              {/* Bottom bar of the input box */}
+              <div className="flex justify-between items-center shrink-0 border-t border-slate-150/40 pt-2.5">
+                <div className="flex items-center gap-1">
+                  {/* File Upload Icon */}
                   <button 
-                    onClick={() => handleSend(undefined, false)}
-                    disabled={isLoading || isParsing || !input.trim()}
-                    className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
-                    title="Send message"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isParsing}
+                    className="p-2 hover:bg-slate-50 text-slate-450 hover:text-indigo-650 rounded-xl transition-all duration-200 flex items-center gap-1.5 text-[10px] font-black"
+                    title="Upload resume or documents (.txt, .pdf, .docx)"
                   >
-                    <Send size={13} />
+                    <Paperclip size={14} />
+                    <span className="hidden sm:inline">Attach Doc</span>
                   </button>
+                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".txt,.pdf,.docx" />
+                  
+                  {isParsing && (
+                    <span className="text-[10px] text-indigo-600 font-bold animate-pulse flex items-center gap-1">
+                      <Loader2 size={10} className="animate-spin" /> Parsing...
+                    </span>
+                  )}
                 </div>
+                
+                {/* Integrated Send Icon Button */}
+                <button 
+                  onClick={() => handleSend(undefined, false)}
+                  disabled={isLoading || isParsing || !input.trim()}
+                  className="px-3.5 py-2 bg-indigo-650 hover:bg-indigo-750 text-white rounded-xl shadow-md transition-all duration-200 active:scale-95 disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1.5 text-xs font-black"
+                  title="Send message"
+                >
+                  <span>Chat</span>
+                  <Send size={11} />
+                </button>
               </div>
+            </div>
 
-              {/* Smaller Generate Essay Button Below the Chatbox */}
+            {/* Generate Essay Button below (about 1 inch wide, which corresponds to w-40, i.e., 160px) */}
+            <div className="mt-5 flex justify-center w-full">
               <button 
                 onClick={() => handleSend(undefined, true)}
                 disabled={isLoading || isParsing}
-                className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs shadow-md shadow-indigo-100 hover:shadow-lg transition-all active:scale-97 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none mt-1"
-                title="Generate polished admissions essay draft on the right"
+                className="w-40 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs shadow-md shadow-indigo-100 hover:shadow-lg hover:shadow-indigo-200/50 hover:scale-[1.02] transition-all duration-200 active:scale-97 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none"
+                title="Open Workspace & generate polished admissions essay draft"
               >
-                <Sparkles size={11} />
+                <Sparkles size={12} />
                 <span>Generate Essay</span>
               </button>
             </div>
-          </div>
-
-          {/* Bottom Section: Admissions Context Card (Collapsible scrollable profile details) */}
-          <div className="border-t border-slate-100 p-4 bg-slate-50 shrink-0 overflow-y-auto max-h-[48%] custom-scrollbar">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-1.5">
-                <BookOpen size={14} className="text-indigo-600" />
-                <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Admissions Profile Ingredients</h3>
-              </div>
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="text-[9px] font-black text-indigo-600 hover:text-indigo-700 hover:underline flex items-center gap-0.5"
-                title="Upload resume or documents"
-              >
-                <Paperclip size={10} /> Upload Doc
-              </button>
-              <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".txt,.pdf,.docx" />
-            </div>
             
-            <div className="grid grid-cols-2 gap-2 mb-2.5">
-              {/* Target Program Box */}
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Target Program/Major</label>
-                <input 
-                  type="text" 
-                  value={targetProgram}
-                  onChange={(e) => setTargetProgram(e.target.value)}
-                  placeholder="e.g. Wharton MBA, CS PhD"
-                  className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-300 font-medium transition-all"
-                />
-              </div>
+            {/* Quick helper context text below */}
+            <p className="text-[10px] text-slate-400 font-semibold text-center mt-8 max-w-sm leading-normal">
+              Need assistance? Paste your draft or upload background notes to instantly initiate admissions guidelines and start co-piloting.
+            </p>
 
-              {/* Word Limit Box */}
-              <div>
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Word Limit Goal</label>
-                <input 
-                  type="text" 
-                  value={wordLimit}
-                  onChange={(e) => setWordLimit(e.target.value)}
-                  placeholder="e.g. 500 words, 650 max"
-                  className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-300 font-medium transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Background Story Textarea Input */}
-            <div>
-              <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Story, Failures & Accomplishments (Optional)</label>
-              <textarea
-                value={storyInput}
-                onChange={(e) => setStoryInput(e.target.value)}
-                rows={5}
-                placeholder="Write down your life and academic experiences, whatever you think is worth writing (achievements or failures, anything that matters to you, special or unique). It is better if they are coupled with your own understanding or enlightenment—not necessarily shining or big, but unique. No grammar or quality requirements."
-                className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl p-2.5 text-slate-800 placeholder-slate-350 leading-relaxed font-medium transition-all resize-none"
-              />
-            </div>
-            
-            {isParsing && (
-              <div className="flex items-center gap-1.5 text-slate-500 text-[10px] font-bold mt-2 animate-pulse">
-                <Loader2 size={12} className="animate-spin text-indigo-600" />
-                <span>Reading and extracting document content...</span>
-              </div>
-            )}
           </div>
-
-        </section>
-
-        {/* ================= RIGHT COLUMN: LIVE ESSAY PREVIEW & DOWNLOADS ================= */}
-        <section className={`w-full md:w-[60%] flex flex-col bg-slate-50 h-full overflow-hidden ${
-          activeTab === 'preview' ? 'flex' : 'hidden md:flex'
-        }`}>
-          
-          {/* Document Workspace Header Bar */}
-          <div className="bg-white border-b border-slate-100 px-5 py-3 shrink-0 flex justify-between items-center shadow-xs">
-            <div className="flex items-center gap-2">
-              <FileText size={16} className="text-indigo-600" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">active_essay_draft.md</span>
-                {generatedEssay && (
-                  <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider">Draft Sync</span>
+        ) : (
+          /* ================= ACTIVE WORKSPACE DUAL PANELS ================= */
+          <>
+            {/* ================= LEFT COLUMN: ADMISSIONS DATA & CHAT ================= */}
+            <section className={`w-full md:w-[40%] flex flex-col border-r border-slate-100 bg-white h-full overflow-hidden ${
+              activeTab === 'editor' ? 'flex' : 'hidden md:flex'
+            }`}>
+              
+              {/* Top Section: Conversations Thread (Scrollable) */}
+              <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 h-full bg-slate-50/20 custom-scrollbar">
+                {messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3 opacity-80 my-auto animate-scale-in">
+                    <div className="w-12 h-12 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm">
+                      <GraduationCap size={24} />
+                    </div>
+                    <h4 className="text-sm font-bold text-slate-800">Your Co-Pilot Admissions Chat</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
+                      Welcome! Paste your essay prompts, instructions, or specific requirements in the Chatbox below to begin editing, brainstorming, or writing your essay.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {messages.map((msg, i) => (
+                      <div key={i} className={`flex ${msg.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
+                        <div className={`max-w-[85%] p-3.5 rounded-2xl text-xs leading-relaxed border ${
+                          msg.role === 'ai' 
+                            ? 'bg-white border-slate-100 text-slate-800 rounded-tl-none shadow-sm shadow-slate-100/50' 
+                            : 'bg-indigo-600 border-indigo-700 text-white rounded-tr-none shadow-md shadow-indigo-100'
+                        }`}>
+                          <p className="whitespace-pre-wrap">{msg.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {isLoading && (
+                      <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold animate-pulse py-1">
+                        <Loader2 size={12} className="animate-spin text-indigo-600" /> Sculpting admissions vocabulary standard...
+                      </div>
+                    )}
+                    
+                    {error && (
+                      <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3.5 rounded-xl border border-red-100 text-xs font-semibold shadow-xs">
+                        <AlertCircle size={14} className="shrink-0" /> 
+                        <span>{error}</span>
+                      </div>
+                    )}
+                    <div ref={chatEndRef} />
+                  </div>
                 )}
               </div>
-            </div>
 
-            {/* Document Controls toolbar */}
-            <div className="flex items-center gap-1">
-              {generatedEssay && (
-                <>
-                  {/* Copy Button */}
+              {/* Middle Section: Large Chatbox & Generate Button */}
+              <div className="p-4 bg-white border-t border-slate-100 shrink-0">
+                <div className="flex flex-col gap-2 w-full">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Active Chatbox</label>
+                  
+                  {/* ChatGPT-style text box with Send icon inside it (compacted height to give story box more room) */}
+                  <div className="relative border border-slate-200 focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-500 rounded-2xl p-3 bg-slate-50/50 focus-within:bg-white transition-all flex flex-col gap-2">
+                    <textarea 
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      disabled={isParsing}
+                      className="w-full border-0 focus:outline-none focus:ring-0 resize-none bg-transparent text-xs min-h-[60px] max-h-[150px] leading-relaxed p-0 placeholder-slate-450 disabled:opacity-50"
+                      placeholder={isParsing ? "Extracting document..." : "Paste essay questions, prompts, or specific requirements here..."}
+                    />
+                    
+                    {/* Bottom bar of the input box */}
+                    <div className="flex justify-between items-center mt-1 shrink-0">
+                      <div className="text-[9px] text-slate-400 font-semibold">
+                        Press <span className="font-bold text-slate-500">Enter</span> to chat
+                      </div>
+                      
+                      {/* Integrated Send Icon Button */}
+                      <button 
+                        onClick={() => handleSend(undefined, false)}
+                        disabled={isLoading || isParsing || !input.trim()}
+                        className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+                        title="Send message"
+                      >
+                        <Send size={13} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Smaller Generate Essay Button Below the Chatbox */}
                   <button 
-                    onClick={copyEssayToClipboard}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1 border transition-all ${
-                      copiedEssay 
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                        : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200 shadow-xs'
-                    }`}
+                    onClick={() => handleSend(undefined, true)}
+                    disabled={isLoading || isParsing}
+                    className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs shadow-md shadow-indigo-100 hover:shadow-lg transition-all active:scale-97 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none mt-1"
+                    title="Generate polished admissions essay draft on the right"
                   >
-                    {copiedEssay ? <Check size={12} /> : <Copy size={12} />}
-                    <span>{copiedEssay ? 'Copied!' : 'Copy'}</span>
+                    <Sparkles size={11} />
+                    <span>Generate Essay</span>
                   </button>
-
-                  {/* Download Dropdowns */}
-                  <button 
-                    onClick={() => downloadEssay('txt')}
-                    className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 rounded-lg text-xs font-extrabold flex items-center gap-1 shadow-xs transition-all"
-                  >
-                    <Download size={12} />
-                    <span>Download (.txt)</span>
-                  </button>
-
-                  <button 
-                    onClick={() => downloadEssay('md')}
-                    className="px-3 py-1.5 bg-indigo-550/5 hover:bg-indigo-600 hover:text-white border border-indigo-150 text-indigo-700 rounded-lg text-xs font-black flex items-center gap-1 shadow-xs transition-all hidden sm:flex"
-                  >
-                    <Download size={12} />
-                    <span>Download (.md)</span>
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Workspace body editor area */}
-          <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col h-full bg-slate-50 relative">
-            {isLoading && isGeneratingEssay && (
-              <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-6 text-center space-y-4 animate-fade-in">
-                <div className="w-14 h-14 bg-white border border-slate-200/50 rounded-2xl flex items-center justify-center text-indigo-650 shadow-md">
-                  <Sparkles className="animate-spin text-indigo-600" size={24} />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider animate-pulse">Sculpting Your Essay Draft...</h3>
-                  <p className="text-[10px] text-slate-400 max-w-xs leading-relaxed font-semibold">
-                    Analyzing admissions variables, structuring narrative, and editing to Ivy League standards. This may take up to a few seconds.
-                  </p>
                 </div>
               </div>
-            )}
-            {!generatedEssay ? (
-              
-              /* Pre-generation premium empty state */
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 max-w-md mx-auto space-y-4">
-                <div className="w-16 h-16 bg-white border border-slate-200/50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm animate-pulse">
-                  <Sparkles size={28} />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-base font-black text-slate-800">Your Living Document Workspace</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Once you configure your admissions story and program details on the left pane and click **"Generate Essay"**, the admissions consultant draft will appear here in real time.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              
-              /* Live interactive document viewer & editor */
-              <div className="flex-1 flex flex-col bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm shadow-slate-100 h-full relative">
-                <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 shrink-0">
-                  <span>Interactive Editor Pane</span>
-                  <span className="flex items-center gap-1 text-emerald-600 font-bold"><Check size={10} /> Editable - tweak draft directly</span>
+
+              {/* Bottom Section: Admissions Context Card (Collapsible scrollable profile details) */}
+              <div className="border-t border-slate-100 p-4 bg-slate-50 shrink-0 overflow-y-auto max-h-[48%] custom-scrollbar">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <BookOpen size={14} className="text-indigo-600" />
+                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Admissions Profile Ingredients</h3>
+                  </div>
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-[9px] font-black text-indigo-600 hover:text-indigo-700 hover:underline flex items-center gap-0.5"
+                    title="Upload resume or documents"
+                  >
+                    <Paperclip size={10} /> Upload Doc
+                  </button>
+                  <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".txt,.pdf,.docx" />
                 </div>
                 
-                <textarea 
-                  value={generatedEssay}
-                  onChange={(e) => setGeneratedEssay(e.target.value)}
-                  className="flex-1 w-full h-full text-sm text-slate-800 placeholder-slate-300 font-medium font-sans leading-relaxed focus:outline-none resize-none bg-transparent custom-scrollbar py-2"
-                  placeholder="Click here to type or modify the essay draft..."
-                />
-              </div>
-            )}
-          </div>
+                <div className="grid grid-cols-2 gap-2 mb-2.5">
+                  {/* Target Program Box */}
+                  <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Target Program/Major</label>
+                    <input 
+                      type="text" 
+                      value={targetProgram}
+                      onChange={(e) => setTargetProgram(e.target.value)}
+                      placeholder="e.g. Wharton MBA, CS PhD"
+                      className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-350 font-medium transition-all"
+                    />
+                  </div>
 
-        </section>
+                  {/* Word Limit Box */}
+                  <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Word Limit Goal</label>
+                    <input 
+                      type="text" 
+                      value={wordLimit}
+                      onChange={(e) => setWordLimit(e.target.value)}
+                      placeholder="e.g. 500 words, 650 max"
+                      className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-350 font-medium transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Background Story Textarea Input */}
+                <div>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Story, Failures & Accomplishments (Optional)</label>
+                  <textarea
+                    value={storyInput}
+                    onChange={(e) => setStoryInput(e.target.value)}
+                    rows={5}
+                    placeholder="Write down your life and academic experiences, whatever you think is worth writing (achievements or failures, anything that matters to you, special or unique). It is better if they are coupled with your own understanding or enlightenment—not necessarily shining or big, but unique. No grammar or quality requirements."
+                    className="w-full text-xs bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 rounded-xl p-2.5 text-slate-800 placeholder-slate-350 leading-relaxed font-medium transition-all resize-none animate-fade-in"
+                  />
+                </div>
+                
+                {isParsing && (
+                  <div className="flex items-center gap-1.5 text-slate-500 text-[10px] font-bold mt-2 animate-pulse">
+                    <Loader2 size={12} className="animate-spin text-indigo-600" />
+                    <span>Reading and extracting document content...</span>
+                  </div>
+                )}
+              </div>
+
+            </section>
+
+            {/* ================= RIGHT COLUMN: LIVE ESSAY PREVIEW & DOWNLOADS ================= */}
+            <section className={`w-full md:w-[60%] flex flex-col bg-slate-50 h-full overflow-hidden ${
+              activeTab === 'preview' ? 'flex' : 'hidden md:flex'
+            }`}>
+              
+              {/* Document Workspace Header Bar */}
+              <div className="bg-white border-b border-slate-100 px-5 py-3 shrink-0 flex justify-between items-center shadow-xs">
+                <div className="flex items-center gap-2">
+                  <FileText size={16} className="text-indigo-600" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">active_essay_draft.md</span>
+                    {generatedEssay && (
+                      <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider animate-scale-in">Draft Sync</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Document Controls toolbar */}
+                <div className="flex items-center gap-1">
+                  {generatedEssay && (
+                    <>
+                      {/* Copy Button */}
+                      <button 
+                        onClick={copyEssayToClipboard}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1 border transition-all ${
+                          copiedEssay 
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                            : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200 shadow-xs'
+                        }`}
+                      >
+                        {copiedEssay ? <Check size={12} /> : <Copy size={12} />}
+                        <span>{copiedEssay ? 'Copied!' : 'Copy'}</span>
+                      </button>
+
+                      {/* Download Dropdowns */}
+                      <button 
+                        onClick={() => downloadEssay('txt')}
+                        className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 rounded-lg text-xs font-extrabold flex items-center gap-1 shadow-xs transition-all"
+                      >
+                        <Download size={12} />
+                        <span>Download (.txt)</span>
+                      </button>
+
+                      <button 
+                        onClick={() => downloadEssay('md')}
+                        className="px-3 py-1.5 bg-indigo-550/5 hover:bg-indigo-600 hover:text-white border border-indigo-150 text-indigo-700 rounded-lg text-xs font-black flex items-center gap-1 shadow-xs transition-all hidden sm:flex"
+                      >
+                        <Download size={12} />
+                        <span>Download (.md)</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Workspace body editor area */}
+              <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col h-full bg-slate-50 relative">
+                {isLoading && isGeneratingEssay && (
+                  <div className="absolute inset-0 bg-slate-50/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-6 text-center space-y-4 animate-fade-in">
+                    <div className="w-14 h-14 bg-white border border-slate-200/50 rounded-2xl flex items-center justify-center text-indigo-650 shadow-md">
+                      <Sparkles className="animate-spin text-indigo-600" size={24} />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider animate-pulse">Sculpting Your Essay Draft...</h3>
+                      <p className="text-[10px] text-slate-400 max-w-xs leading-relaxed font-semibold">
+                        Analyzing admissions variables, structuring narrative, and editing to Ivy League standards. This may take up to a few seconds.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {!generatedEssay ? (
+                  
+                  /* Pre-generation premium empty state */
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8 max-w-md mx-auto space-y-4 animate-fade-in">
+                    <div className="w-16 h-16 bg-white border border-slate-200/50 rounded-2xl flex items-center justify-center text-indigo-650 shadow-sm animate-pulse">
+                      <Sparkles size={28} />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-base font-black text-slate-800">Your Living Document Workspace</h3>
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        Once you configure your admissions story and program details on the left pane and click **"Generate Essay"**, the admissions consultant draft will appear here in real time.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  
+                  /* Live interactive document viewer & editor */
+                  <div className="flex-1 flex flex-col bg-white border border-slate-200/60 rounded-3xl p-6 shadow-sm shadow-slate-100 h-full relative animate-scale-in">
+                    <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 shrink-0">
+                      <span>Interactive Editor Pane</span>
+                      <span className="flex items-center gap-1 text-emerald-600 font-bold"><Check size={10} /> Editable - tweak draft directly</span>
+                    </div>
+                    
+                    <textarea 
+                      value={generatedEssay}
+                      onChange={(e) => setGeneratedEssay(e.target.value)}
+                      className="flex-1 w-full h-full text-sm text-slate-800 placeholder-slate-300 font-medium font-sans leading-relaxed focus:outline-none resize-none bg-transparent custom-scrollbar py-2"
+                      placeholder="Click here to type or modify the essay draft..."
+                    />
+                  </div>
+                )}
+              </div>
+
+            </section>
+          </>
+        )}
 
       </main>
 
