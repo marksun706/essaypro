@@ -415,43 +415,50 @@ function App() {
             )}
           </div>
 
-          {/* Middle Section: Large Chatbox & Dual Action Buttons */}
+          {/* Middle Section: Large Chatbox & Generate Button */}
           <div className="p-4 bg-white border-t border-slate-100 shrink-0">
             <div className="flex flex-col gap-2 w-full">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Active Chatbox</label>
-              <textarea 
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyPress}
-                disabled={isParsing}
-                className="w-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 rounded-2xl p-4 bg-slate-50/50 resize-none transition-all text-xs min-h-[110px] max-h-[220px] leading-relaxed disabled:opacity-50"
-                placeholder={isParsing ? "Extracting document..." : "Paste essay questions, prompts, or specific requirements here..."}
-              />
               
-              {/* Premium Dual Buttons row */}
-              <div className="flex items-center gap-2 w-full mt-1">
-                {/* Standard Chat Button */}
-                <button 
-                  onClick={() => handleSend(undefined, false)}
-                  disabled={isLoading || isParsing}
-                  className="flex-1 py-2.5 px-3 bg-slate-100 hover:bg-slate-200/80 text-slate-700 rounded-xl font-extrabold text-xs transition-all active:scale-97 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none"
-                  title="Ask a standard follow-up question"
-                >
-                  <Send size={12} />
-                  <span>Chat / Critique</span>
-                </button>
-
-                {/* Specialized Generate Button */}
-                <button 
-                  onClick={() => handleSend(undefined, true)}
-                  disabled={isLoading || isParsing}
-                  className="flex-1 py-2.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs shadow-md shadow-indigo-100 hover:shadow-lg transition-all active:scale-97 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none"
-                  title="Instruct the AI to write a polished essay"
-                >
-                  <Sparkles size={12} />
-                  <span>Generate Essay</span>
-                </button>
+              {/* ChatGPT-style text box with Send icon inside it */}
+              <div className="relative border border-slate-200 focus-within:ring-4 focus-within:ring-indigo-100 focus-within:border-indigo-500 rounded-2xl p-3 bg-slate-50/50 focus-within:bg-white transition-all flex flex-col gap-2">
+                <textarea 
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  disabled={isParsing}
+                  className="w-full border-0 focus:outline-none focus:ring-0 resize-none bg-transparent text-xs min-h-[115px] max-h-[220px] leading-relaxed p-0 placeholder-slate-450 disabled:opacity-50"
+                  placeholder={isParsing ? "Extracting document..." : "Paste essay questions, prompts, or specific requirements here..."}
+                />
+                
+                {/* Bottom bar of the input box */}
+                <div className="flex justify-between items-center mt-1 shrink-0">
+                  <div className="text-[9px] text-slate-400 font-semibold">
+                    Press <span className="font-bold text-slate-500">Enter</span> to chat
+                  </div>
+                  
+                  {/* Integrated Send Icon Button */}
+                  <button 
+                    onClick={() => handleSend(undefined, false)}
+                    disabled={isLoading || isParsing || !input.trim()}
+                    className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+                    title="Send message"
+                  >
+                    <Send size={13} />
+                  </button>
+                </div>
               </div>
+
+              {/* Smaller Generate Essay Button Below the Chatbox */}
+              <button 
+                onClick={() => handleSend(undefined, true)}
+                disabled={isLoading || isParsing}
+                className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs shadow-md shadow-indigo-100 hover:shadow-lg transition-all active:scale-97 flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none mt-1"
+                title="Generate polished admissions essay draft on the right"
+              >
+                <Sparkles size={11} />
+                <span>Generate Essay</span>
+              </button>
             </div>
           </div>
 
