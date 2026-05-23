@@ -370,7 +370,7 @@ function App() {
                 </div>
                 <h4 className="text-sm font-bold text-slate-800">Your Co-Pilot Admissions Chat</h4>
                 <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
-                  Welcome! Paste your essay prompts, prompts, word limits, or specific requirements in the Chatbox below to begin editing, brainstorming, or writing your essay.
+                  Welcome! Paste your essay prompts, instructions, or specific requirements in the Chatbox below to begin editing, brainstorming, or writing your essay.
                 </p>
               </div>
             ) : (
@@ -414,7 +414,7 @@ function App() {
                 onKeyDown={handleKeyPress}
                 disabled={isParsing}
                 className="w-full border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 rounded-2xl p-4 bg-slate-50/50 resize-none transition-all text-xs min-h-[110px] max-h-[220px] leading-relaxed disabled:opacity-50"
-                placeholder={isParsing ? "Extracting document..." : "Paste essay questions, prompts, word limits, or specific requirements here..."}
+                placeholder={isParsing ? "Extracting document..." : "Paste essay questions, prompts, or specific requirements here..."}
               />
               
               {/* Premium Dual Buttons row */}
