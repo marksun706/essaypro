@@ -53,7 +53,7 @@ export default {
           DMX_API_KEY_length: env.DMX_API_KEY ? env.DMX_API_KEY.length : 0,
           DMX_API_URL: env.DMX_API_URL || "not configured (defaults to https://www.dmxapi.cn)",
           DMX_MODEL: env.DMX_MODEL || "not configured (defaults to claude-haiku-4-5-20251001-cc)",
-          DMX_CHAT_MODEL: env.DMX_CHAT_MODEL || "not configured (defaults to gpt-4o-mini)",
+          DMX_CHAT_MODEL: env.DMX_CHAT_MODEL || "not configured (defaults to deepseek-v4-flash)",
           has_assets: !!env.ASSETS,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -81,7 +81,7 @@ export default {
         const dmxApiKey = env.DMX_API_KEY;
         const dmxApiUrl = env.DMX_API_URL || "https://www.dmxapi.cn";
         const dmxModel = isChatOnly 
-          ? (env.DMX_CHAT_MODEL || "gpt-4o-mini") 
+          ? (env.DMX_CHAT_MODEL || "deepseek-v4-flash") 
           : (env.DMX_MODEL || "claude-haiku-4-5-20251001-cc");
 
         if (!dmxApiKey) {

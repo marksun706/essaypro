@@ -27,6 +27,6 @@
   "vars": {
     "DMX_API_URL": "https://www.dmxapi.cn",
     "DMX_MODEL": "claude-haiku-4-5-20251001-cc",
-    "DMX_CHAT_MODEL": "gpt-4o-mini"
+    "DMX_CHAT_MODEL": "deepseek-v4-flash"
   }
 }

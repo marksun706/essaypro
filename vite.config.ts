@@ -47,7 +47,7 @@ export default defineConfig(({ mode }) => {
               const dmxApiKey = env.DMX_API_KEY;
               const dmxApiUrl = env.DMX_API_URL || "https://api.dmxapi.cn";
               const dmxModel = isChatOnly 
-                ? (env.DMX_CHAT_MODEL || "gpt-4o-mini") 
+                ? (env.DMX_CHAT_MODEL || "deepseek-v4-flash") 
                 : (env.DMX_MODEL || "claude-haiku-4-5-20251001-cc");
 
               if (!dmxApiKey) {
