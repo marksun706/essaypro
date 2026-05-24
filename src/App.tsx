@@ -68,7 +68,7 @@ function App() {
   }, [messages]);
 
   const copyEmail = () => {
-    navigator.clipboard.writeText('admissions@essayspro.org');
+    navigator.clipboard.writeText('support@essayspro.org');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -214,7 +214,7 @@ function App() {
 
     // Construct standard visible message to show in the chat thread
     const userMsgContent = isGen 
-      ? `✨ Generate Essay Draft (Target: ${targetProgram || 'Ivy League'}, Limit: ${wordLimit || 'Standard'})`
+      ? `✨ Generate Essay Draft (Target: ${targetProgram || 'Top College'}, Limit: ${wordLimit || 'Standard'})`
       : messageToSend;
 
     if (isGen) {
@@ -238,7 +238,7 @@ function App() {
       if (wordLimit.trim()) backendPrompt += `- Word Limit: ${wordLimit}\n`;
       if (storyInput.trim()) backendPrompt += `- Story / Raw Background: ${storyInput}\n`;
       if (messageToSend.trim()) backendPrompt += `- Additional User Direction: ${messageToSend}\n`;
-      backendPrompt += `\nEnsure the final essay conforms to Ivy League standards and complies with essayspro prompt manager rules. Output the essay draft cleanly, preferably inside a markdown code block (using \`\`\`markdown) so my workspace extracts it perfectly.`;
+      backendPrompt += `\nEnsure the final essay conforms to premium college admissions standards and complies with essayspro prompt manager rules. Output the essay draft cleanly, preferably inside a markdown code block (using \`\`\`markdown) so my workspace extracts it perfectly.`;
     }
 
     try {
@@ -390,7 +390,7 @@ function App() {
                 <div className="space-y-2">
                   <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-none">essayspro</h2>
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest block pt-1.5 leading-normal">
-                    Designed Specifically for College Application Essay Drafting
+                    Tailor-Made for College Application Essay Drafting
                   </p>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed max-w-xs pt-1">
@@ -684,7 +684,7 @@ function App() {
                 <div className="p-4 bg-indigo-50/50 border border-indigo-100/40 rounded-2xl">
                   <h4 className="text-xs font-black text-indigo-700 uppercase tracking-wider mb-1">Our Core Purpose</h4>
                   <p className="text-xs text-indigo-900 leading-relaxed">
-                    We help high-achieving applicants organize their stories, structure supplement responses, and polished vocabulary structure. To achieve true Ivy League quality that stands out to committees, raw drafts are polished to the absolute highest human standard.
+                    We help high-achieving applicants organize their stories, structure supplement responses, and polished vocabulary structure. To achieve premium quality that stands out to committees, raw drafts are polished to the absolute highest human standard.
                   </p>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
@@ -777,8 +777,8 @@ function App() {
                 {/* Copy Card */}
                 <div className="bg-slate-900/5 hover:bg-slate-900/10 border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center relative gap-3 transition-colors">
                   <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">Official Contact Desk</span>
-                  <a href="mailto:admissions@essayspro.org" className="text-base font-extrabold text-slate-900 hover:text-indigo-600 transition-all underline decoration-dotted">
-                    admissions@essayspro.org
+                  <a href="mailto:support@essayspro.org" className="text-base font-extrabold text-slate-900 hover:text-indigo-600 transition-all underline decoration-dotted">
+                    support@essayspro.org
                   </a>
                   
                   <button 

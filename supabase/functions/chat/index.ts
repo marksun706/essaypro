@@ -53,7 +53,7 @@ serve(async (req) => {
       try {
         systemPrompt = await Deno.readTextFile("./system-prompt.txt");
       } catch (err) {
-        systemPrompt = "You are a professional Ivy League admissions consultant and personal essay editor.";
+        systemPrompt = "You are a professional college admissions consultant and personal essay editor.";
       }
     }
 

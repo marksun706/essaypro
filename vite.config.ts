@@ -63,7 +63,7 @@ export default defineConfig(({ mode }) => {
                 const promptPath = path.resolve(process.cwd(), 'supabase/functions/chat/system-prompt.txt');
                 systemPrompt = fs.readFileSync(promptPath, 'utf8');
               } catch (e) {
-                systemPrompt = "You are a professional Ivy League admissions consultant and personal essay editor.";
+                systemPrompt = "You are a professional college admissions consultant and personal essay editor.";
               }
 
               // 4. Construct message history in Chat completions format
